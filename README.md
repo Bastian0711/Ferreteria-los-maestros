@@ -1,7 +1,7 @@
 # Ferreteria-los-maestros
 
-- Bastián Araneda 
-- Misael concha
+- Bastián Araneda (ba.aranedaa@duouc.cl)
+- Misael concha (mis.concha@duocuc.cl)
 
 ## Caso
 Ferretería los maestros 
