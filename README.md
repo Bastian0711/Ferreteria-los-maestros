@@ -1,10 +1,12 @@
 # Ferreteria-los-maestros
 
-# Bastián Araneda 
-# Misael concha
+- Bastián Araneda 
+- Misael concha
 
 ## Caso
 Ferretería los maestros 
+
+# Descripción del caso
 
 ## Estructura del proyecto 
 
@@ -17,3 +19,4 @@ Ferretería los maestros
 npm run dev
 
 ## Material complementario 
+https://drive.google.com/drive/folders/1C9TOff9ng6_h9OrZwG6mq1_tvH5ElXke
