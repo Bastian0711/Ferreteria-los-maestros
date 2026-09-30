@@ -3,7 +3,9 @@ function Boton(props) {
     return (
         <button
             type={props.type || "button"}
-            className={'btn btn-${variante}'} onClick={props.onClick}
+            className={`btn btn-${variante}`}
+            onClick={props.onClick}
+            disabled={props.disabled || false}
         >
             {props.texto}
         </button>
