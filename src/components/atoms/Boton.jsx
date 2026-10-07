@@ -16,4 +16,6 @@ export default Boton;
 
 //prueba para probar commit desde cuenta creada.
 
-//Prueba de commit para ver las cuentas.
+//Prueba de commit para ver las cuentas. 
+
+//prueba para ver los cambios dentro del github.
