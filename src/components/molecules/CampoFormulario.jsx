@@ -13,6 +13,7 @@ function CampoFormulario(props) {
                 value={props.value}
                 onChange={props.onChange}
                 required={props.required}
+                invalido={!!props.error}
             />
             {props.error && (
                 <div className="text-danger small mt-1">{props.error}</div>

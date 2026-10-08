@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Container, Row, Col, Form } from "react-bootstrap";
 import CampoFormulario from "../molecules/CampoFormulario";
 import Boton from "../atoms/Boton";
+import { esCorreoValido } from "../../utils/validaciones";
 
 function FormularioLogin(props) {
   const [correo, setCorreo] = useState("");
@@ -13,7 +14,9 @@ function FormularioLogin(props) {
 
     const nuevosErrores = {};
     if (!correo.trim()) {
-      nuevosErrores.correo = "El correo es obligatorio.";
+    nuevosErrores.correo = "El correo es obligatorio.";
+    } else if (!esCorreoValido(correo)) {
+    nuevosErrores.correo = "Ingresa un correo válido, por ejemplo: nombre@correo.com";
     }
     if (!contrasena.trim()) {
       nuevosErrores.contrasena = "La contraseña es obligatoria.";
@@ -28,8 +31,8 @@ function FormularioLogin(props) {
   return (
     <Container>
       <Row className="justify-content-center">
-        <Col xs={12} md={8} lg={5}>
-          <Form onSubmit={manejarSubmit} noValidate className="p-4 shadow-sm rounded bg-white">
+        <Col xs={12} md={8} lg={5}> #aqui puedo dejar el noValidate pero ns si es mala practica
+          <Form onSubmit={manejarSubmit}  className="p-4 shadow-sm rounded bg-white">
             <h2 className="mb-4 text-center">Iniciar sesión</h2>
 
             <CampoFormulario

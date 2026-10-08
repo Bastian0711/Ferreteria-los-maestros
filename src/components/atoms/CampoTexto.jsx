@@ -3,7 +3,7 @@ function CampoTexto(props) {
         <input 
         type={props.type || "text"}
         id={props.id}
-        className="form-control"
+        className={`form-control ${props.invalido ? "is-invalid" : ""}`}
         placeholder={props.placeholder}
         value={props.value}
         onChange={props.onChange}

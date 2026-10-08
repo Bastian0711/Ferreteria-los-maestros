@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Form } from "react-bootstrap";
 import CampoFormulario from "../molecules/CampoFormulario";
 import Boton from "../atoms/Boton";
+import { esCorreoValido } from "../../utils/validaciones";
 
 function FormularioContacto(props) {
   const [nombre, setNombre] = useState("");
@@ -18,6 +19,8 @@ function FormularioContacto(props) {
     }
     if (!correo.trim()) {
       nuevosErrores.correo = "El correo es obligatorio.";
+    }else if (!esCorreoValido(correo)) {
+      nuevosErrores.correo = "Ingresa un correo válido, por ejemplo: nombre@correo.com";
     }
     if (!mensaje.trim()) {
       nuevosErrores.mensaje = "El mensaje es obligatorio.";
