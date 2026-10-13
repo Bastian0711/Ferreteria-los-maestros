@@ -1,7 +1,9 @@
 import { Container, Row, Col } from "react-bootstrap";
 import FormularioContacto from "../components/organisms/FormularioContacto";
+import { useTituloPagina } from "../hooks/useTituloPagina";
 
 function Contacto() {
+  useTituloPagina("Contáctanos");
   function manejarEnvio(datos) {
     console.log("Mensaje de contacto:", datos);
     alert(`Gracias, ${datos.nombre}. Recibimos tu mensaje.`);

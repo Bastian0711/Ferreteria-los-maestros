@@ -1,7 +1,10 @@
 import { Container } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { useTituloPagina } from "../hooks/useTituloPagina";
 
 function Inicio() {
+  useTituloPagina("Inicio");
+
   return (
     <Container className="py-5 text-center">
       <h1 className="mb-3">Ferretería Los Maestros</h1>

@@ -1,6 +1,9 @@
 import FormularioLogin from "../components/organisms/FormularioLogin";
+import { useTituloPagina } from "../hooks/useTituloPagina";
 
 function Login() {
+  useTituloPagina("Iniciar sesión");
+  
   function manejarLogin(datos) {
     console.log("Datos del login:", datos);
     alert(`Bienvenido, ${datos.correo}`);
