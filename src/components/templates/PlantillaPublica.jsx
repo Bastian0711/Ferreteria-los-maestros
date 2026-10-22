@@ -6,7 +6,12 @@ function PlantillaPublica(props) {
 
   return (
     <>
-      <BarraNavegacion onNavegar={navigate} />
+      <BarraNavegacion 
+        onNavegar={navigate}
+        usuario={props.usuario}
+        cantidadCarrito={props.cantidadCarrito}
+        onCerrarSesion={props.onCerrarSesion}
+      />
       <main>{props.children}</main>
     </>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Container, Row, Col, Form } from "react-bootstrap";
+import { Container, Row, Col, Form, Alert } from "react-bootstrap";
 import CampoFormulario from "../molecules/CampoFormulario";
 import Boton from "../atoms/Boton";
 import { esCorreoValido, validarContrasena } from "../../utils/validaciones";
@@ -56,7 +56,9 @@ function FormularioLogin(props) {
               onChange={(e) => setContrasena(e.target.value)}
               error={errores.contrasena}
             />
-
+            {props.error && (
+              <Alert variant="danger" role="alert">{props.error}</Alert>
+            )}
             <div className="d-grid">
               <Boton texto="Iniciar sesión" type="submit" variante="primary" />
             </div>

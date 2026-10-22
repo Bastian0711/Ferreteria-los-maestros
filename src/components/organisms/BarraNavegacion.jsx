@@ -1,9 +1,19 @@
 import { Container, Navbar, Nav } from "react-bootstrap";
+import InsigniaCarrito from "../atoms/InsigniaCarrito";
 
 function BarraNavegacion(props) {
+  const usuario = props.usuario;
+  const esAdmin = usuario?.rol === "admin";
+
   function ir(evento, ruta) {
     evento.preventDefault();
     props.onNavegar(ruta);
+  }
+
+  function salir(evento) {
+    evento.preventDefault();
+    props.onCerrarSesion?.();
+    props.onNavegar("/");
   }
 
   return (
@@ -16,8 +26,27 @@ function BarraNavegacion(props) {
         <Navbar.Collapse id="menu-principal">
           <Nav className="ms-auto">
             <Nav.Link href="/" onClick={(e) => ir(e, "/")}>Inicio</Nav.Link>
+            <Nav.Link href="/catalogo" onClick={(e) => ir(e, "/catalogo")}>Catálogo</Nav.Link>
             <Nav.Link href="/contacto" onClick={(e) => ir(e, "/contacto")}>Contáctanos</Nav.Link>
-            <Nav.Link href="/login" onClick={(e) => ir(e, "/login")}>Iniciar sesión</Nav.Link>
+            <Nav.Link href="/carrito" onClick={(e) => ir(e, "/carrito")}>
+              Carrito
+              <InsigniaCarrito cantidad={props.cantidadCarrito} />
+            </Nav.Link>
+
+            {esAdmin && (
+              <Nav.Link href="/admin/productos" onClick={(e) => ir(e, "/admin/productos")}>
+                Panel admin
+              </Nav.Link>
+            )}
+
+            {usuario ? (
+              <Nav.Link href="/" onClick={salir}>Cerrar sesión</Nav.Link>
+            ) : (
+              <>
+                <Nav.Link href="/login" onClick={(e) => ir(e, "/login")}>Iniciar sesión</Nav.Link>
+                <Nav.Link href="/registro" onClick={(e) => ir(e, "/registro")}>Registro</Nav.Link>
+              </>
+            )}
           </Nav>
         </Navbar.Collapse>
       </Container>

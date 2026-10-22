@@ -9,7 +9,23 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     coverage: {
       provider: 'v8',
-      include: ['src/utils/**', 'src/components/**', 'src/services/**'],
+      reporter: ['text', 'html'],
+      include: [
+        'src/utils/**',
+        'src/components/**',
+        'src/services/**',
+        'src/pages/**',
+        'src/hooks/**',
+        'src/context/**',
+        'src/data/**',
+      ],
+      exclude: ['**/*.test.{js,jsx}', 'src/main.jsx', 'src/setupTests.js'],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 70,
+        statements: 80,
+      },
     },
   },
 })

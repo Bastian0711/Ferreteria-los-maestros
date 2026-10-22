@@ -16,9 +16,20 @@ function TarjetaProducto(props) {
                 />
             )}
             <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{props.nombre}</h5>
+                <h5 className="card-title">
+                    <a
+                        href={`/producto/${props.id}`}
+                        className="text-decoration-none text-reset"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            props.onVerDetalle?.(props.id);
+                        }}
+                    >
+                        {props.nombre}
+                    </a>
+                </h5>
                 <div className="mb-2">
-                    <EtiquetaStock stock={props.stock} />
+                    <EtiquetaStock stock={props.stock} umbral={props.stockMinimo} />
                 </div>
                 <div className="mt-auto d-flex justify-content-between align-items-center">
                     <Precio valor={props.precio} />

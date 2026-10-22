@@ -1,14 +1,15 @@
-import { Container, Row, Col } from "react-bootstrap";
+import {useState} from "react";
+import { Container, Row, Col, Alert } from "react-bootstrap";
 import FormularioContacto from "../components/organisms/FormularioContacto";
 import { useTituloPagina } from "../hooks/useTituloPagina";
 import PlantillaPublica from "../components/templates/PlantillaPublica";
 
 function Contacto() {
   useTituloPagina("Contáctanos");
+  const [exito, setExito] = useState("");
 
   function manejarEnvio(datos) {
-    console.log("Mensaje de contacto:", datos);
-    alert(`Gracias, ${datos.nombre}. Recibimos tu mensaje.`);
+    setExito(`Gracias, ${datos.nombre}. Recibimos tu mensaje.`);
   }
 
   return (
@@ -24,6 +25,11 @@ function Contacto() {
             <p className="mb-1"><strong>Ubicación:</strong> La Serena, Región de Coquimbo</p>
           </Col>
           <Col xs={12} md={7}>
+            {exito && (
+              <Alert variant="success" dismissible onClose={() => setExito("")} role="status">
+                {exito}
+              </Alert>
+            )}
             <FormularioContacto onEnviar={manejarEnvio} />
           </Col>
         </Row>

@@ -15,16 +15,49 @@ function renderizar(ruta) {
 }
 
 describe("NoEncontrado", () => {
-  it("muestra el 404 en una ruta inexistente", () => {
-    renderizar("/ruta-que-no-existe");
+  it("muestra el código 404 en una ruta inexistente", () => {
+    // Arrange
+    const rutaInexistente = "/ruta-que-no-existe";
+
+    // Act
+    renderizar(rutaInexistente);
+
+    // Assert
     expect(screen.getByText("404")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Página no encontrada" })).toBeInTheDocument();
+  });
+
+  it("muestra el título de página no encontrada", () => {
+    // Arrange
+    const rutaInexistente = "/ruta-que-no-existe";
+
+    // Act
+    renderizar(rutaInexistente);
+
+    // Assert
+    expect(
+      screen.getByRole("heading", { name: "Página no encontrada" })
+    ).toBeInTheDocument();
+  });
+
+  it("actualiza el título del documento", () => {
+    // Arrange
+    const rutaInexistente = "/ruta-que-no-existe";
+
+    // Act
+    renderizar(rutaInexistente);
+
+    // Assert
     expect(document.title).toBe("Página no encontrada | Ferretería Los Maestros");
   });
 
   it("el botón vuelve al inicio", async () => {
+    // Arrange
     renderizar("/ruta-que-no-existe");
+
+    // Act
     await userEvent.click(screen.getByRole("button", { name: "Volver al inicio" }));
+
+    // Assert
     expect(screen.getByText("Pantalla de inicio")).toBeInTheDocument();
   });
 });
