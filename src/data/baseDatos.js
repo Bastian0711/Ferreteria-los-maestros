@@ -2,6 +2,7 @@
 // (clave `ferreteria_db`) tras cada cambio.
 
 import { CATEGORIAS_SEMILLA, PRODUCTOS_SEMILLA } from "./productosSemilla.js";
+import { precioFinal } from "../utils/precios.js";
 
 const CLAVE_BD = "ferreteria_db";
 const VERSION_BD = 1;
@@ -94,6 +95,7 @@ export function suscribir(callback) {
   return () => suscriptores.delete(callback);
 }
 
+// Vuelve a los datos de la semilla (útil para tests y para "restablecer demo").
 export function reiniciarBase() {
   estado = estadoInicial();
   guardar();
@@ -101,11 +103,7 @@ export function reiniciarBase() {
 
 // ---------- Productos (CRUD) ----------
 
-export function precioFinal(producto) {
-  return producto.oferta && producto.precioOferta
-    ? producto.precioOferta
-    : producto.precioVenta;
-}
+export { precioFinal };
 
 export function listarProductos() {
   return copiar(estado.productos);
@@ -161,7 +159,7 @@ export function actualizarProducto(codigo, cambios) {
   if (!producto) throw new Error(`No existe el producto ${codigo}.`);
 
   const resto = { ...cambios };
-  delete resto.codigo; 
+  delete resto.codigo; // el código es la clave del producto y no se modifica
   for (const campo of ["precioCompra", "precioVenta", "stock", "stockMinimo"]) {
     if (campo in resto) resto[campo] = validarNumero(resto[campo], campo);
   }
@@ -171,7 +169,6 @@ export function actualizarProducto(codigo, cambios) {
   guardar();
   return copiar(producto);
 }
-
 
 export function eliminarProducto(codigo) {
   const antes = estado.productos.length;
@@ -240,7 +237,6 @@ export function crearUsuario(datos) {
 }
 
 // ---------- Pedidos ----------
-// Verifica TODO el stock antes de descontar nada: o se confirma completo o no se toca nada.
 export function crearPedido({ usuario, items, entrega, datosCliente }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("La solicitud no tiene productos.");

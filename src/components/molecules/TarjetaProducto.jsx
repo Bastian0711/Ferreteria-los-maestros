@@ -5,8 +5,18 @@ import Boton from "../atoms/Boton";
 function TarjetaProducto(props) {
     const sinStock = props.stock <= 0;
 
+    function verDetalle(evento) {
+        evento.preventDefault();
+        props.onVerDetalle?.(props.id);
+    }
+
     return (
         <div className="card h-100 shadow-sm">
+            {props.oferta && (
+                <span className="badge bg-danger position-absolute top-0 start-0 m-2">
+                    Oferta
+                </span>
+            )}
             {props.imagen && (
                 <img
                     src={props.imagen}
@@ -20,10 +30,7 @@ function TarjetaProducto(props) {
                     <a
                         href={`/producto/${props.id}`}
                         className="text-decoration-none text-reset"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            props.onVerDetalle?.(props.id);
-                        }}
+                        onClick={verDetalle}
                     >
                         {props.nombre}
                     </a>
@@ -32,7 +39,14 @@ function TarjetaProducto(props) {
                     <EtiquetaStock stock={props.stock} umbral={props.stockMinimo} />
                 </div>
                 <div className="mt-auto d-flex justify-content-between align-items-center">
-                    <Precio valor={props.precio} />
+                    <div>
+                        {props.precioOriginal && (
+                            <span className="d-block text-muted text-decoration-line-through">
+                                <Precio valor={props.precioOriginal} className="small" />
+                            </span>
+                        )}
+                        <Precio valor={props.precio} />
+                    </div>
                     <Boton
                         texto="Agregar"
                         disabled={sinStock}

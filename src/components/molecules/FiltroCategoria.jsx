@@ -1,7 +1,11 @@
 import Selector from "../atoms/Selector";
 
 function FiltroCategoria(props) {
-    const opciones = (props.categorias || []).map((c) => ({ value: c, label: c }));
+    const opciones = (props.categorias || []).map((c) =>
+        typeof c === "string"
+            ? { value: c, label: c }
+            : { value: c.id, label: c.nombre }
+    );
 
     return (
         <div className="mb-3">
