@@ -1,4 +1,4 @@
-import {useState} from "react";
+import { useState } from "react";
 import { Container, Row, Col, Alert } from "react-bootstrap";
 import FormularioContacto from "../components/organisms/FormularioContacto";
 import { useTituloPagina } from "../hooks/useTituloPagina";
@@ -6,10 +6,11 @@ import PlantillaPublica from "../components/templates/PlantillaPublica";
 
 function Contacto() {
   useTituloPagina("Contáctanos");
-  const [exito, setExito] = useState("");
+  const [nombreEnviado, setNombreEnviado] = useState("");
 
+  // Es una simulacion, no hay servicor para guardar dicha informacion de contacto
   function manejarEnvio(datos) {
-    setExito(`Gracias, ${datos.nombre}. Recibimos tu mensaje.`);
+    setNombreEnviado(datos.nombre);
   }
 
   return (
@@ -25,9 +26,9 @@ function Contacto() {
             <p className="mb-1"><strong>Ubicación:</strong> La Serena, Región de Coquimbo</p>
           </Col>
           <Col xs={12} md={7}>
-            {exito && (
-              <Alert variant="success" dismissible onClose={() => setExito("")} role="status">
-                {exito}
+            {nombreEnviado && (
+              <Alert variant="success" dismissible onClose={() => setNombreEnviado("")}>
+                Gracias, {nombreEnviado}. Recibimos tu mensaje.
               </Alert>
             )}
             <FormularioContacto onEnviar={manejarEnvio} />
