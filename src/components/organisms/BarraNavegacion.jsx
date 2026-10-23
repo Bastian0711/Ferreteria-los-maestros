@@ -34,7 +34,7 @@ function BarraNavegacion(props) {
             </Nav.Link>
 
             {esAdmin && (
-              <Nav.Link href="/admin/productos" onClick={(e) => ir(e, "/admin/productos")}>
+              <Nav.Link href="/admin" onClick={(e) => ir(e, "/admin")}>
                 Panel admin
               </Nav.Link>
             )}

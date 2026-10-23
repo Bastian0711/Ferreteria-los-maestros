@@ -2,8 +2,9 @@ function MenuAdmin(props) {
     const opciones = props.opciones || [];
     const rutaActual = props.rutaActual || "";
 
-    function estaActiva(ruta) {
-        return rutaActual === ruta || rutaActual.startsWith(`${ruta}/`);
+    function estaActiva(opcion) {
+        if (opcion.exacta) return rutaActual === opcion.ruta;
+        return rutaActual === opcion.ruta || rutaActual.startsWith(`${opcion.ruta}/`);
     }
 
     return (
@@ -13,8 +14,8 @@ function MenuAdmin(props) {
                     <li className="nav-item" key={opcion.ruta}>
                         <a
                             href={opcion.ruta}
-                            className={`nav-link ${estaActiva(opcion.ruta) ? "active" : ""}`}
-                            aria-current={estaActiva(opcion.ruta) ? "page" : undefined}
+                            className={`nav-link ${estaActiva(opcion) ? "active" : ""}`}
+                            aria-current={estaActiva(opcion) ? "page" : undefined}
                             onClick={(e) => {
                                 e.preventDefault();
                                 props.onNavegar(opcion.ruta);

@@ -39,6 +39,14 @@ describe("PlantillaPublica", () => {
     expect(screen.getByText("Contenido")).toBeInTheDocument();
   });
 
+  it("muestra el pie de página", () => {
+    // Arrange + Act
+    renderizar();
+
+    // Assert
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+  });
+
   it("navega al usar un enlace de la barra", async () => {
     // Arrange
     renderizar();

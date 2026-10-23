@@ -28,4 +28,27 @@ describe("MenuAdmin", () => {
     // Assert
     expect(onNavegar).toHaveBeenCalledWith("/");
   });
+
+  it("una opción exacta no se marca cuando se está en una ruta hija", () => {
+    // Arrange
+    const conResumen = [{ ruta: "/admin", texto: "Resumen", exacta: true }, ...opciones];
+
+    // Act
+    render(<MenuAdmin opciones={conResumen} rutaActual="/admin/productos" onNavegar={() => {}} />);
+
+    // Assert
+    expect(screen.getByText("Resumen")).not.toHaveClass("active");
+    expect(screen.getByText("Productos")).toHaveClass("active");
+  });
+
+  it("una opción exacta se marca cuando la ruta es idéntica", () => {
+    // Arrange
+    const conResumen = [{ ruta: "/admin", texto: "Resumen", exacta: true }, ...opciones];
+
+    // Act
+    render(<MenuAdmin opciones={conResumen} rutaActual="/admin" onNavegar={() => {}} />);
+
+    // Assert
+    expect(screen.getByText("Resumen")).toHaveClass("active");
+  });
 });

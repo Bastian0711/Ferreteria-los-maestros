@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Container, Row, Col, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PlantillaPublica from "../components/templates/PlantillaPublica";
 import BuscadorProductos from "../components/molecules/BuscadorProductos";
 import FiltroCategoria from "../components/molecules/FiltroCategoria";
@@ -14,11 +14,11 @@ import { filtrarProductos } from "../utils/filtros";
 function Catalogo() {
   useTituloPagina("Catálogo");
   const navigate = useNavigate();
+  const [parametros] = useSearchParams();
   const { productos, categorias } = useCatalogo();
   const { agregar } = useCarrito();
-
   const [texto, setTexto] = useState("");
-  const [categoriaId, setCategoriaId] = useState("");
+  const [categoriaId, setCategoriaId] = useState(parametros.get("categoria") || "");
   const [aviso, setAviso] = useState(null);
 
   const filtrados = filtrarProductos(productos, { texto, categoriaId });

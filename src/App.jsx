@@ -10,6 +10,8 @@ import Checkout from "./pages/Checkout";
 import ResultadoPedido from "./pages/ResultadoPedido";
 import AdminProductos from "./pages/AdminProductos";
 import RutaProtegida from "./routes/RutaProtegida";
+import Registro from "./pages/Registro";
+import AdminDashboard from "./pages/AdminDashboard";
 
 
 function App() {
@@ -25,6 +27,8 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/pedido/:numero" element={<ResultadoPedido />} />
         <Route path="/admin/productos"element={<RutaProtegida rolRequerido="admin"><AdminProductos /></RutaProtegida>}/>
+        <Route path="/registro" element={<Registro />} />
+        <Route path="/admin"element={<RutaProtegida rolRequerido="admin"><AdminDashboard /></RutaProtegida>}/>
         <Route path="*" element={<NoEncontrado />} />
       </Routes>
     </BrowserRouter>

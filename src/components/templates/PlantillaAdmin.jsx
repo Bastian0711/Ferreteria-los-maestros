@@ -5,8 +5,9 @@ import MenuAdmin from "../organisms/MenuAdmin";
 import Boton from "../atoms/Boton";
 import { useAuth } from "../../context/AuthContext";
 
-// Cuando se agreguen más módulos al panel, se suman aquí.
+
 const OPCIONES_MENU = [
+  { ruta: "/admin", texto: "Resumen", exacta: true },
   { ruta: "/admin/productos", texto: "Productos" },
   { ruta: "/", texto: "Ver tienda" },
 ];

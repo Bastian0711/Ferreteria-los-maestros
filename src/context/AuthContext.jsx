@@ -1,14 +1,12 @@
 import { createContext, useContext, useState } from "react";
-import { autenticar } from "../services/authService";
+import { autenticar, registrarUsuario } from "../services/authService";
 
 const CLAVE_SESION = "ferreteria_sesion";
-
-// Valor por defecto: sin sesión. Así los componentes que usan useAuth()
-// también funcionan en tests que no montan el AuthProvider.
 const AuthContext = createContext({
   usuario: null,
   esAdmin: false,
   iniciarSesion: () => null,
+  registrar: () => null,
   cerrarSesion: () => {},
 });
 
@@ -29,14 +27,12 @@ function guardarSesion(usuario) {
       localStorage.removeItem(CLAVE_SESION);
     }
   } catch {
-    // Sin localStorage la sesión dura solo mientras la pestaña esté abierta.
   }
 }
 
 export function AuthProvider(props) {
   const [usuario, setUsuario] = useState(leerSesion);
 
-  // Devuelve el usuario si las credenciales son correctas, o null si no.
   function iniciarSesion(correo, contrasena) {
     const encontrado = autenticar(correo, contrasena);
     if (!encontrado) return null;
@@ -44,6 +40,13 @@ export function AuthProvider(props) {
     setUsuario(encontrado);
     guardarSesion(encontrado);
     return encontrado;
+  }
+
+  function registrar(datos) {
+    const nuevo = registrarUsuario(datos);
+    setUsuario(nuevo);
+    guardarSesion(nuevo);
+    return nuevo;
   }
 
   function cerrarSesion() {
@@ -55,6 +58,7 @@ export function AuthProvider(props) {
     usuario,
     esAdmin: usuario?.rol === "admin",
     iniciarSesion,
+    registrar,
     cerrarSesion,
   };
 

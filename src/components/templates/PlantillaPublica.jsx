@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import BarraNavegacion from "../organisms/BarraNavegacion";
+import PieDePagina from "../organisms/PieDePagina";
 import { useAuth } from "../../context/AuthContext";
 import { useCarrito } from "../../context/CarritoContext";
 
@@ -13,10 +14,11 @@ function PlantillaPublica(props) {
       <BarraNavegacion
         onNavegar={navigate}
         usuario={usuario}
-        cantidadCarrito={props.cantidadCarrito}
+        cantidadCarrito={cantidadTotal}
         onCerrarSesion={cerrarSesion}
       />
       <main>{props.children}</main>
+      <PieDePagina />
     </>
   );
 }
