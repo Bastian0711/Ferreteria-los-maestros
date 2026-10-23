@@ -8,6 +8,9 @@ import DetalleProducto from "./pages/DetalleProducto";
 import Carrito from "./pages/Carrito";
 import Checkout from "./pages/Checkout";
 import ResultadoPedido from "./pages/ResultadoPedido";
+import AdminProductos from "./pages/AdminProductos";
+import RutaProtegida from "./routes/RutaProtegida";
+
 
 function App() {
   return (
@@ -21,6 +24,7 @@ function App() {
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/pedido/:numero" element={<ResultadoPedido />} />
+        <Route path="/admin/productos"element={<RutaProtegida rolRequerido="admin"><AdminProductos /></RutaProtegida>}/>
         <Route path="*" element={<NoEncontrado />} />
       </Routes>
     </BrowserRouter>
