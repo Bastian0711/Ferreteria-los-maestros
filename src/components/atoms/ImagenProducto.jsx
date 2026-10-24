@@ -19,7 +19,7 @@ function ImagenProducto(props) {
             src={props.src}
             alt={props.alt}
             className={props.className || ""}
-            style={props.alto ? { objectFit: "cover", height: `${props.alto}px`, width: "100%" } : undefined}
+            style={props.alto ? { objectFit: "contain", height: `${props.alto}px`, width: "100%" } : undefined}
             onError={() => setSrcFallido(props.src)}
         />
     );
