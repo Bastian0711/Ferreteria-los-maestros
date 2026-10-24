@@ -10,18 +10,24 @@ import { useTituloPagina } from "../hooks/useTituloPagina";
 import { useCatalogo } from "../context/CatalogoContext";
 import { useCarrito } from "../context/CarritoContext";
 import { filtrarProductos } from "../utils/filtros";
+import { conStockDisponible } from "../utils/carrito";
 
 function Catalogo() {
   useTituloPagina("Catálogo");
   const navigate = useNavigate();
   const [parametros] = useSearchParams();
   const { productos, categorias } = useCatalogo();
-  const { agregar } = useCarrito();
+  const { agregar, items } = useCarrito();
+
+
   const [texto, setTexto] = useState("");
+
   const [categoriaId, setCategoriaId] = useState(parametros.get("categoria") || "");
   const [aviso, setAviso] = useState(null);
 
-  const filtrados = filtrarProductos(productos, { texto, categoriaId });
+
+  const disponibles = conStockDisponible(productos, items);
+  const filtrados = filtrarProductos(disponibles, { texto, categoriaId });
   const hayFiltros = texto !== "" || categoriaId !== "";
 
   function limpiarFiltros() {

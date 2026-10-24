@@ -4,10 +4,10 @@ import Precio from "../atoms/Precio";
 import EtiquetaStock from "../atoms/EtiquetaStock";
 import ContadorCantidad from "../atoms/ContadorCantidad";
 import Boton from "../atoms/Boton";
+import ImagenProducto from "../atoms/ImagenProducto";
 import { estaEnOferta, precioFinal } from "../../utils/precios";
 
-// Ficha completa de un producto. El estado de la cantidad elegida vive aquí;
-// al pulsar el botón se avisa a la página con onAgregar(cantidad).
+
 function FichaProducto(props) {
     const producto = props.producto;
     const sinStock = producto.stock <= 0;
@@ -19,20 +19,7 @@ function FichaProducto(props) {
     return (
         <Row className="g-4">
             <Col xs={12} md={5}>
-                {producto.imagen ? (
-                    <img
-                        src={producto.imagen}
-                        alt={producto.nombre}
-                        className="img-fluid rounded"
-                    />
-                ) : (
-                    <div
-                        className="bg-light rounded d-flex align-items-center justify-content-center text-muted"
-                        style={{ minHeight: "240px" }}
-                    >
-                        Sin imagen
-                    </div>
-                )}
+                <ImagenProducto src={producto.imagen} alt={producto.nombre} className="img-fluid rounded" />
             </Col>
 
             <Col xs={12} md={7}>

@@ -7,12 +7,13 @@ import MensajeNoEncontrado from "../components/organisms/MensajeNoEncontrado";
 import { useTituloPagina } from "../hooks/useTituloPagina";
 import { useCatalogo } from "../context/CatalogoContext";
 import { useCarrito } from "../context/CarritoContext";
+import { conStockDisponible } from "../utils/carrito";
 
 function DetalleProducto() {
   const { codigo } = useParams();
   const navigate = useNavigate();
   const { productos, categorias } = useCatalogo();
-  const { agregar } = useCarrito();
+  const { agregar, items } = useCarrito();
   const [aviso, setAviso] = useState(null);
 
   const producto = productos.find((p) => p.codigo === codigo);
@@ -55,7 +56,7 @@ function DetalleProducto() {
           </Alert>
         )}
         <FichaProducto
-          producto={producto}
+          producto={conStockDisponible([producto], items)[0]}
           categoriaNombre={categoria ? categoria.nombre : ""}
           onAgregar={manejarAgregar}
           onVolver={() => navigate("/catalogo")}

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { Navigate, useNavigate } from "react-router-dom";
 import PlantillaPublica from "../components/templates/PlantillaPublica";
@@ -15,9 +15,9 @@ function Checkout() {
   const { usuario } = useAuth();
   const { items, total, cantidadTotal, limpiar } = useCarrito();
 
-  const confirmada = useRef(false);
+  const [confirmada, setConfirmada] = useState(false);
 
-  if (items.length === 0 && !confirmada.current) {
+  if (items.length === 0 && !confirmada) {
     return <Navigate to="/carrito" replace />;
   }
 
@@ -30,15 +30,17 @@ function Checkout() {
         datosCliente: { nombre: datos.nombre, apellidos: datos.apellidos, correo: datos.correo },
       });
 
-      confirmada.current = true;
+      // Ambos cambios se aplican juntos: la pagina ya sabe que esta confirmada cuando el carrito queda vacio
+      setConfirmada(true);
       limpiar();
       navigate(`/pedido/${pedido.numero}`);
     } catch (error) {
-      // El carrito se conserva para poder reintentar.
+      // El carrito se conserva para poder reintentar
       navigate("/pedido/error", { state: { motivo: error.message } });
     }
   }
 
+  // Si hay sesion, el formulario parte con sus datos
   const datosIniciales = usuario
     ? {
         nombre: usuario.nombre,

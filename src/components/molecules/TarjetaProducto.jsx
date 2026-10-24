@@ -1,6 +1,7 @@
 import Precio from "../atoms/Precio";
 import EtiquetaStock from "../atoms/EtiquetaStock";
 import Boton from "../atoms/Boton";
+import ImagenProducto from "../atoms/ImagenProducto";
 
 function TarjetaProducto(props) {
     const sinStock = props.stock <= 0;
@@ -17,14 +18,7 @@ function TarjetaProducto(props) {
                     Oferta
                 </span>
             )}
-            {props.imagen && (
-                <img
-                    src={props.imagen}
-                    className="card-img-top"
-                    alt={props.nombre}
-                    style={{ objectFit: "cover", height: "160px" }}
-                />
-            )}
+            <ImagenProducto src={props.imagen} alt={props.nombre} alto={160} className="card-img-top" />
             <div className="card-body d-flex flex-column">
                 <h5 className="card-title">
                     <a

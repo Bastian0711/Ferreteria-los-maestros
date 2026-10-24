@@ -18,6 +18,8 @@ export default defineConfig({
         'src/hooks/**',
         'src/context/**',
         'src/data/**',
+        'src/routes/**',
+        'src/App.jsx',
       ],
       exclude: ['**/*.test.{js,jsx}', 'src/main.jsx', 'src/setupTests.js'],
       thresholds: {

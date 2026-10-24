@@ -2,6 +2,7 @@ import { createContext, useContext, useState } from "react";
 import { autenticar, registrarUsuario } from "../services/authService";
 
 const CLAVE_SESION = "ferreteria_sesion";
+
 const AuthContext = createContext({
   usuario: null,
   esAdmin: false,
@@ -27,12 +28,14 @@ function guardarSesion(usuario) {
       localStorage.removeItem(CLAVE_SESION);
     }
   } catch {
+    // Sin localStorage la sesion dura solo mientras la pestaña este abierta
   }
 }
 
 export function AuthProvider(props) {
   const [usuario, setUsuario] = useState(leerSesion);
 
+  // Devuelve el usuario si las credenciales son correctas, o null si no
   function iniciarSesion(correo, contrasena) {
     const encontrado = autenticar(correo, contrasena);
     if (!encontrado) return null;
@@ -65,6 +68,7 @@ export function AuthProvider(props) {
   return <AuthContext.Provider value={valor}>{props.children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }

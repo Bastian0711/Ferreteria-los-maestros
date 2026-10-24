@@ -4,7 +4,6 @@ import CampoFormulario from "../molecules/CampoFormulario";
 import Boton from "../atoms/Boton";
 import { esCorreoValido, validarContrasena } from "../../utils/validaciones";
 
-
 function FormularioRegistro(props) {
   const [nombre, setNombre] = useState("");
   const [apellidos, setApellidos] = useState("");

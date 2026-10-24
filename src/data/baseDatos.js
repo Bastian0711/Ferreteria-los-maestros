@@ -1,11 +1,9 @@
-// Vive en memoria y se guarda en localStorage
-// (clave `ferreteria_db`) tras cada cambio.
-
 import { CATEGORIAS_SEMILLA, PRODUCTOS_SEMILLA } from "./productosSemilla.js";
 import { precioFinal } from "../utils/precios.js";
 
 const CLAVE_BD = "ferreteria_db";
-const VERSION_BD = 1;
+
+const VERSION_BD = 2;
 
 export const ESTADOS_PEDIDO = [
   "Pendiente",
@@ -56,10 +54,15 @@ function copiar(valor) {
   return JSON.parse(JSON.stringify(valor));
 }
 
+
+function rutaImagen(codigo) {
+  return `/productos/${codigo}.jpg`;
+}
+
 function estadoInicial() {
   return {
     version: VERSION_BD,
-    productos: copiar(PRODUCTOS_SEMILLA),
+    productos: copiar(PRODUCTOS_SEMILLA).map((p) => ({ ...p, imagen: p.imagen || rutaImagen(p.codigo) })),
     categorias: copiar(CATEGORIAS_SEMILLA),
     usuarios: copiar(USUARIOS_SEMILLA),
     pedidos: [],
@@ -75,6 +78,7 @@ function cargar() {
       if (guardado && guardado.version === VERSION_BD) return guardado;
     }
   } catch {
+
   }
   return estadoInicial();
 }
@@ -86,22 +90,25 @@ function guardar() {
   try {
     localStorage.setItem(CLAVE_BD, JSON.stringify(estado));
   } catch {
+
   }
   suscriptores.forEach((callback) => callback());
 }
+
 
 export function suscribir(callback) {
   suscriptores.add(callback);
   return () => suscriptores.delete(callback);
 }
 
-// Vuelve a los datos de la semilla (útil para tests y para "restablecer demo").
+
 export function reiniciarBase() {
   estado = estadoInicial();
   guardar();
 }
 
 // ---------- Productos (CRUD) ----------
+
 
 export { precioFinal };
 
@@ -170,6 +177,7 @@ export function actualizarProducto(codigo, cambios) {
   return copiar(producto);
 }
 
+
 export function eliminarProducto(codigo) {
   const antes = estado.productos.length;
   estado.productos = estado.productos.filter((p) => p.codigo !== codigo);
@@ -205,6 +213,7 @@ export function obtenerUsuario(id) {
   return usuario ? sinContrasena(usuario) : undefined;
 }
 
+
 export function buscarUsuarioPorCorreo(correo) {
   const buscado = String(correo || "").trim().toLowerCase();
   const usuario = estado.usuarios.find((u) => u.correo.toLowerCase() === buscado);
@@ -237,6 +246,8 @@ export function crearUsuario(datos) {
 }
 
 // ---------- Pedidos ----------
+
+
 export function crearPedido({ usuario, items, entrega, datosCliente }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("La solicitud no tiene productos.");

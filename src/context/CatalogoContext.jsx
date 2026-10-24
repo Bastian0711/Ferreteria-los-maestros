@@ -29,6 +29,7 @@ export function CatalogoProvider(props) {
   );
 }
 
+// eslint-disable-next-line react/only-export-components
 export function useCatalogo() {
   return useContext(CatalogoContext);
 }

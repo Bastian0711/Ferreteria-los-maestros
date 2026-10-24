@@ -46,3 +46,13 @@ export function sanitizarLineas(valor) {
     )
     .map((linea) => ({ codigo: linea.codigo, cantidad: linea.cantidad }));
 }
+
+export function conStockDisponible(productos, lineas) {
+  const enCarrito = new Map(lineas.map((linea) => [linea.codigo, linea.cantidad]));
+
+  return productos.map((producto) =>
+    enCarrito.has(producto.codigo)
+      ? { ...producto, stock: Math.max(producto.stock - enCarrito.get(producto.codigo), 0) }
+      : producto
+  );
+}

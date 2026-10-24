@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCatalogo } from "../context/CatalogoContext";
 import { useCarrito } from "../context/CarritoContext";
 import { estaEnOferta } from "../utils/precios";
+import { conStockDisponible } from "../utils/carrito";
 
 const CANTIDAD_POR_BLOQUE = 3;
 
@@ -17,11 +18,12 @@ function Inicio() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
   const { productos, categorias } = useCatalogo();
-  const { agregar } = useCarrito();
+  const { agregar, items } = useCarrito();
   const [aviso, setAviso] = useState(null);
 
-  const ofertas = productos.filter(estaEnOferta).slice(0, CANTIDAD_POR_BLOQUE);
-  const destacados = productos.filter((p) => p.destacado).slice(0, CANTIDAD_POR_BLOQUE);
+  const disponibles = conStockDisponible(productos, items);
+  const ofertas = disponibles.filter(estaEnOferta).slice(0, CANTIDAD_POR_BLOQUE);
+  const destacados = disponibles.filter((p) => p.destacado).slice(0, CANTIDAD_POR_BLOQUE);
 
   function manejarAgregar(codigo) {
     const producto = productos.find((p) => p.codigo === codigo);

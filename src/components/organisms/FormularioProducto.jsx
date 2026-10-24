@@ -8,6 +8,7 @@ import Boton from "../atoms/Boton";
 function esEnteroNoNegativo(texto) {
   return texto !== "" && Number.isInteger(Number(texto)) && Number(texto) >= 0;
 }
+
 function FormularioProducto(props) {
   const inicial = props.productoInicial;
   const esEdicion = Boolean(inicial);
@@ -24,6 +25,7 @@ function FormularioProducto(props) {
   const [precioOferta, setPrecioOferta] = useState(
     inicial && inicial.precioOferta ? String(inicial.precioOferta) : ""
   );
+  const [imagen, setImagen] = useState(inicial && inicial.imagen ? inicial.imagen : "");
   const [destacado, setDestacado] = useState(inicial ? Boolean(inicial.destacado) : false);
   const [errores, setErrores] = useState({});
 
@@ -64,6 +66,7 @@ function FormularioProducto(props) {
         oferta,
         precioOferta: oferta ? Number(precioOferta) : null,
         destacado,
+        imagen: imagen.trim(),
       });
     }
   }
@@ -179,6 +182,13 @@ function FormularioProducto(props) {
           error={errores.precioOferta}
         />
       )}
+      <CampoFormulario
+        id="producto-imagen"
+        label="Imagen (ruta o dirección web, opcional)"
+        placeholder="/productos/MC001.jpg"
+        value={imagen}
+        onChange={(e) => setImagen(e.target.value)}
+      />
       <CampoCasilla
         id="producto-destacado"
         label="Producto destacado"
