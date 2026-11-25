@@ -15,6 +15,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Ofertas from "./pages/Ofertas";
 import Categorias from "./pages/Categorias";
 import Categoria from "./pages/Categoria";
+import MisPedidos from "./pages/MisPedidos";
+import AdminUsuarios from "./pages/AdminUsuarios";
 
 
 function App() {
@@ -34,7 +36,9 @@ function App() {
         <Route path="/pedido/:numero" element={<ResultadoPedido />} />
         <Route path="/admin/productos" element={<RutaProtegida rolRequerido="admin"><AdminProductos /></RutaProtegida>} />
         <Route path="/registro" element={<Registro />} />
-        <Route path="/admin" element={<RutaProtegida rolRequerido="admin"><AdminDashboard /></RutaProtegida>} />
+        <Route path="/admin" element={<RutaProtegida rolRequerido={["admin", "vendedor"]}><AdminDashboard /></RutaProtegida>} />
+        <Route path="/admin/usuarios" element={<RutaProtegida rolRequerido="admin"><AdminUsuarios /></RutaProtegida>} />
+        <Route path="/mis-pedidos" element={<RutaProtegida rolRequerido={["cliente", "contratista"]}><MisPedidos /></RutaProtegida>} />
         <Route path="*" element={<NoEncontrado />} />
       </Routes>
     </BrowserRouter>

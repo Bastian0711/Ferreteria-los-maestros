@@ -69,4 +69,26 @@ describe("RutaProtegida", () => {
     // Assert
     expect(screen.getByText("Contenido protegido")).toBeInTheDocument();
   });
+
+  it("acepta varios roles: deja pasar al vendedor al panel", () => {
+    // Arrange
+    useAuth.mockReturnValue({ usuario: { rol: "vendedor" } });
+
+    // Act
+    renderizar(["admin", "vendedor"]);
+
+    // Assert
+    expect(screen.getByText("Contenido protegido")).toBeInTheDocument();
+  });
+
+  it("con varios roles, sigue bloqueando a quien no está en la lista", () => {
+    // Arrange
+    useAuth.mockReturnValue({ usuario: { rol: "cliente" } });
+
+    // Act
+    renderizar(["admin", "vendedor"]);
+
+    // Assert
+    expect(screen.getByText("Pantalla de inicio")).toBeInTheDocument();
+  });
 });

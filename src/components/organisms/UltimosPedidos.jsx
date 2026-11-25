@@ -21,7 +21,7 @@ function UltimosPedidos(props) {
                         <th>Total</th>
                         <th>Estado</th>
                         <th>Pago</th>
-                        {props.onAvanzar && <th>Acción</th>}
+                        {(props.onAvanzar || props.onVer) && <th>Acción</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -36,6 +36,15 @@ function UltimosPedidos(props) {
                                 <EtiquetaEstado estado={pedido.estado} />
                             </td>
                             <td>{pedido.pago}</td>
+                            {props.onVer && (
+                                <td>
+                                    <Boton
+                                        texto="Ver"
+                                        variante="outline-secondary btn-sm"
+                                        onClick={() => props.onVer(pedido.numero)}
+                                    />
+                                </td>
+                            )}
                             {props.onAvanzar && (
                                 <td>
                                     {siguienteEstado(pedido.estado) && (

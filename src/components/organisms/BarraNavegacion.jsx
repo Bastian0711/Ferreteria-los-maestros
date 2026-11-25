@@ -3,7 +3,9 @@ import InsigniaCarrito from "../atoms/InsigniaCarrito";
 
 function BarraNavegacion(props) {
   const usuario = props.usuario;
-  const esAdmin = usuario?.rol === "admin";
+  // El menú cambia según el rol: el personal ve el panel; los clientes, sus solicitudes
+  const esPersonal = usuario?.rol === "admin" || usuario?.rol === "vendedor";
+  const esComprador = usuario?.rol === "cliente" || usuario?.rol === "contratista";
 
   function ir(evento, ruta) {
     evento.preventDefault();
@@ -35,9 +37,15 @@ function BarraNavegacion(props) {
               <InsigniaCarrito cantidad={props.cantidadCarrito} />
             </Nav.Link>
 
-            {esAdmin && (
+            {esPersonal && (
               <Nav.Link href="/admin" onClick={(e) => ir(e, "/admin")}>
-                Panel admin
+                {usuario.rol === "admin" ? "Panel admin" : "Panel de ventas"}
+              </Nav.Link>
+            )}
+
+            {esComprador && (
+              <Nav.Link href="/mis-pedidos" onClick={(e) => ir(e, "/mis-pedidos")}>
+                Mis solicitudes
               </Nav.Link>
             )}
 

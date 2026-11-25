@@ -58,4 +58,11 @@ export const pedidosSimulados = {
     return esPersonal ? todos : todos.filter((p) => usuario && p.usuarioId === usuario.id);
   },
   cambiarEstadoPedido: async (numero, estado) => bd.actualizarEstadoPedido(numero, estado),
+  obtenerSaldo: async () => {
+    const usuario = sesionActual();
+    const saldo = bd.listarPedidos()
+      .filter((p) => usuario && p.usuarioId === usuario.id && p.pago === "Pago pendiente a fin de mes")
+      .reduce((suma, p) => suma + p.total, 0);
+    return { idUsuario: usuario ? usuario.id : null, saldo };
+  },
 };

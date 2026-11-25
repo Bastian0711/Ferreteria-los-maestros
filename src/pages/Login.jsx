@@ -5,6 +5,14 @@ import { useTituloPagina } from "../hooks/useTituloPagina";
 import { useAuth } from "../context/AuthContext";
 import PlantillaPublica from "../components/templates/PlantillaPublica";
 
+// Pantalla de inicio según el rol
+const DESTINO_POR_ROL = {
+  admin: "/admin/productos",
+  vendedor: "/admin",
+  contratista: "/catalogo",
+  cliente: "/catalogo",
+};
+
 function Login() {
   useTituloPagina("Iniciar sesión");
   const navigate = useNavigate();
@@ -24,7 +32,7 @@ function Login() {
       }
       // Si venía de una página que exige sesión (por ejemplo, el checkout), vuelve a ella
       const desde = location.state && location.state.desde;
-      navigate(desde || (usuario.rol === "admin" ? "/admin/productos" : "/catalogo"));
+      navigate(desde || DESTINO_POR_ROL[usuario.rol] || "/catalogo");
     } catch (e) {
       // Sin conexión con el servidor u otro error del backend
       setError(e.message);
