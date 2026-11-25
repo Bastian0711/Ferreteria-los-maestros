@@ -1,87 +1,70 @@
-import { autenticar } from "./authService";
-import { buscarUsuarioPorCorreo, reiniciarBase } from "../data/baseDatos";
-import { validarContrasena } from "../utils/validaciones";
+import { vi } from "vitest";
+import { autenticar, adaptarUsuario } from "./authService";
+import { apiUsuarios } from "./api";
 
-const CORREOS_SEMILLA = [
-  "admin@maestros.cl",
-  "contratista@maestros.cl",
-  "cliente@maestros.cl",
-];
+// Se simula la API: no se llama a un servidor real
+vi.mock("./api", async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, apiUsuarios: { post: vi.fn() } };
+});
 
-describe("authService", () => {
+const USUARIO_API = { id: 1, nombre: "Administrador", correo: "admin@maestros.cl", rol: "admin", activo: true };
+
+describe("authService.autenticar", () => {
   beforeEach(() => {
-    localStorage.clear();
-    reiniciarBase();
+    apiUsuarios.post.mockReset();
   });
 
-  it.each(CORREOS_SEMILLA)(
-    "la contraseña de la semilla de %s cumple las reglas de validarContrasena",
-    (correo) => {
-      // Arrange
-      const usuario = buscarUsuarioPorCorreo(correo);
-
-      // Act
-      const error = validarContrasena(usuario.contrasena);
-
-      // Assert
-      expect(error).toBe("");
-    }
-  );
-
-  it("autentica al administrador con credenciales correctas", () => {
+  it("envía correo y password a /auth/login y devuelve token y usuario", async () => {
     // Arrange
-    const correo = "admin@maestros.cl";
-    const contrasena = "Admin123!";
+    apiUsuarios.post.mockResolvedValue({ data: { accessToken: "token-123", usuario: USUARIO_API } });
 
     // Act
-    const usuario = autenticar(correo, contrasena);
+    const sesion = await autenticar(" admin@maestros.cl ", "Admin123!");
 
     // Assert
-    expect(usuario).not.toBeNull();
-    expect(usuario.rol).toBe("admin");
+    expect(apiUsuarios.post).toHaveBeenCalledWith("/auth/login", { correo: "admin@maestros.cl", password: "Admin123!" });
+    expect(sesion.token).toBe("token-123");
+    expect(sesion.usuario.correo).toBe("admin@maestros.cl");
   });
 
-  it("no expone la contraseña en el usuario devuelto", () => {
+  it("devuelve null si el backend responde 401", async () => {
     // Arrange
-    const correo = "cliente@maestros.cl";
+    apiUsuarios.post.mockRejectedValue({ response: { status: 401, data: { mensaje: "Correo o contrasena incorrectos." } } });
 
     // Act
-    const usuario = autenticar(correo, "Cliente123!");
+    const sesion = await autenticar("admin@maestros.cl", "Mala123!");
 
     // Assert
-    expect(usuario).not.toHaveProperty("contrasena");
+    expect(sesion).toBeNull();
   });
 
-  it("devuelve null si la contraseña es incorrecta", () => {
+  it("lanza un error claro si no hay conexión con el servidor", async () => {
     // Arrange
-    const contrasenaErronea = "Otra123!";
+    apiUsuarios.post.mockRejectedValue({ message: "Network Error" });
 
-    // Act
-    const usuario = autenticar("admin@maestros.cl", contrasenaErronea);
-
-    // Assert
-    expect(usuario).toBeNull();
+    // Act + Assert
+    await expect(autenticar("admin@maestros.cl", "Admin123!")).rejects.toThrow("No pudimos conectar con el servidor");
   });
 
-  it("devuelve null si el correo no existe", () => {
+  it("lanza el mensaje del backend ante otros errores", async () => {
     // Arrange
-    const correoInexistente = "nadie@maestros.cl";
+    apiUsuarios.post.mockRejectedValue({ response: { status: 500, data: { mensaje: "Error interno del servidor." } } });
 
-    // Act
-    const usuario = autenticar(correoInexistente, "Admin123!");
+    // Act + Assert
+    await expect(autenticar("admin@maestros.cl", "Admin123!")).rejects.toThrow("Error interno del servidor.");
+  });
+});
 
-    // Assert
-    expect(usuario).toBeNull();
+describe("authService.adaptarUsuario", () => {
+  it("marca con cuenta corriente al contratista", () => {
+    // Arrange + Act + Assert
+    expect(adaptarUsuario({ id: 3, rol: "contratista" }).cuentaCorriente).toBe(true);
   });
 
-  it("ignora mayúsculas y espacios en el correo", () => {
-    // Arrange
-    const correoConFormato = "  ADMIN@Maestros.cl ";
-
-    // Act
-    const usuario = autenticar(correoConFormato, "Admin123!");
-
-    // Assert
-    expect(usuario).not.toBeNull();
+  it("deja sin cuenta corriente a los demás roles", () => {
+    // Arrange + Act + Assert
+    expect(adaptarUsuario({ id: 4, rol: "cliente" }).cuentaCorriente).toBe(false);
+    expect(adaptarUsuario({ id: 1, rol: "admin" }).cuentaCorriente).toBe(false);
   });
 });

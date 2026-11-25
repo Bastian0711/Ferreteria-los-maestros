@@ -60,7 +60,12 @@ function FormularioLogin(props) {
               <Alert variant="danger" role="alert">{props.error}</Alert>
             )}
             <div className="d-grid">
-              <Boton texto="Iniciar sesión" type="submit" variante="primary" />
+              <Boton
+                texto={props.cargando ? "Ingresando..." : "Iniciar sesión"}
+                type="submit"
+                variante="primary"
+                disabled={props.cargando}
+              />
             </div>
           </Form>
         </Col>

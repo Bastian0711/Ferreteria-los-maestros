@@ -10,22 +10,26 @@ function Registro() {
   const navigate = useNavigate();
   const { registrar } = useAuth();
   const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(false);
 
-  function manejarRegistro(datos) {
+  async function manejarRegistro(datos) {
+    setError("");
+    setCargando(true);
     try {
-      registrar(datos); // crea la cuenta y deja la sesión iniciada
-      setError("");
+      await registrar(datos); // crea la cuenta en el backend y deja la sesión iniciada
       navigate("/catalogo");
     } catch (e) {
-      // por ejemplo el correo ya está registrado.
+      // Por ejemplo, el correo ya está registrado (409) o los datos no son válidos (400)
       setError(e.message);
+    } finally {
+      setCargando(false);
     }
   }
 
   return (
     <PlantillaPublica>
       <div className="py-5">
-        <FormularioRegistro onRegistrar={manejarRegistro} error={error} />
+        <FormularioRegistro onRegistrar={manejarRegistro} error={error} cargando={cargando} />
       </div>
     </PlantillaPublica>
   );

@@ -5,6 +5,7 @@ import ResultadoPedido from "./ResultadoPedido";
 import { AuthProvider } from "../context/AuthContext";
 import { reiniciarBase } from "../data/baseDatos";
 import { crearPedido } from "../services/pedidosService";
+import { iniciarSesionDePrueba } from "../test/sesionDePrueba";
 
 const DATOS_CLIENTE = { nombre: "Camila", apellidos: "Soto Reyes", correo: "camila@correo.cl" };
 const USUARIO_2 = { id: 2, nombre: "Carlos", rol: "cliente", cuentaCorriente: true };
@@ -21,7 +22,7 @@ function crear(usuario, entrega = { tipo: "retiro" }) {
 }
 
 function iniciarSesionComo(usuario) {
-  localStorage.setItem("ferreteria_sesion", JSON.stringify(usuario));
+  iniciarSesionDePrueba(usuario);
 }
 
 function renderizar(entrada) {

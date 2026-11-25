@@ -1,65 +1,74 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { autenticar, registrarUsuario } from "../services/authService";
-
-const CLAVE_SESION = "ferreteria_sesion";
+import { borrarSesion, guardarSesion, leerSesion, vencimientoToken } from "../services/sesion";
+import { EVENTO_SESION_EXPIRADA } from "../services/api";
 
 const AuthContext = createContext({
   usuario: null,
+  token: null,
   esAdmin: false,
-  iniciarSesion: () => null,
-  registrar: () => null,
+  iniciarSesion: async () => null,
+  registrar: async () => null,
   cerrarSesion: () => {},
 });
 
-function leerSesion() {
-  try {
-    const texto = localStorage.getItem(CLAVE_SESION);
-    return texto ? JSON.parse(texto) : null;
-  } catch {
-    return null;
-  }
-}
-
-function guardarSesion(usuario) {
-  try {
-    if (usuario) {
-      localStorage.setItem(CLAVE_SESION, JSON.stringify(usuario));
-    } else {
-      localStorage.removeItem(CLAVE_SESION);
-    }
-  } catch {
-    // Sin localStorage la sesion dura solo mientras la pestaña este abierta
-  }
-}
+// Mayor espera que acepta setTimeout (unos 24 días)
+const ESPERA_MAXIMA = 2147483647;
 
 export function AuthProvider(props) {
-  const [usuario, setUsuario] = useState(leerSesion);
-
-  // Devuelve el usuario si las credenciales son correctas, o null si no
-  function iniciarSesion(correo, contrasena) {
-    const encontrado = autenticar(correo, contrasena);
-    if (!encontrado) return null;
-
-    setUsuario(encontrado);
-    guardarSesion(encontrado);
-    return encontrado;
-  }
-
-  function registrar(datos) {
-    const nuevo = registrarUsuario(datos);
-    setUsuario(nuevo);
-    guardarSesion(nuevo);
-    return nuevo;
-  }
+  const [sesion, setSesion] = useState(leerSesion);
 
   function cerrarSesion() {
-    setUsuario(null);
-    guardarSesion(null);
+    borrarSesion();
+    setSesion(null);
   }
+
+  // El cliente Axios avisa cuando el backend responde 401 con un token: se cierra la sesión
+  useEffect(() => {
+    function alExpirar() {
+      borrarSesion();
+      setSesion(null);
+    }
+    window.addEventListener(EVENTO_SESION_EXPIRADA, alExpirar);
+    return () => window.removeEventListener(EVENTO_SESION_EXPIRADA, alExpirar);
+  }, []);
+
+  // Cierra la sesión en el momento exacto en que vence el token
+  useEffect(() => {
+    if (!sesion) return undefined;
+    const vencimiento = vencimientoToken(sesion.token);
+    if (vencimiento === null) return undefined;
+    const espera = Math.min(Math.max(vencimiento - Date.now(), 0), ESPERA_MAXIMA);
+    const temporizador = setTimeout(() => {
+      borrarSesion();
+      setSesion(null);
+    }, espera);
+    return () => clearTimeout(temporizador);
+  }, [sesion]);
+
+  // Devuelve el usuario si las credenciales son correctas, o null si no
+  async function iniciarSesion(correo, contrasena) {
+    const nueva = await autenticar(correo, contrasena);
+    if (!nueva) return null;
+    guardarSesion(nueva);
+    setSesion(nueva);
+    return nueva.usuario;
+  }
+
+  // Crea la cuenta en el backend y deja la sesión iniciada
+  async function registrar(datos) {
+    const nueva = await registrarUsuario(datos);
+    guardarSesion(nueva);
+    setSesion(nueva);
+    return nueva.usuario;
+  }
+
+  const usuario = sesion ? sesion.usuario : null;
 
   const valor = {
     usuario,
-    esAdmin: usuario?.rol === "admin",
+    token: sesion ? sesion.token : null,
+    esAdmin: Boolean(usuario && usuario.rol === "admin"),
     iniciarSesion,
     registrar,
     cerrarSesion,

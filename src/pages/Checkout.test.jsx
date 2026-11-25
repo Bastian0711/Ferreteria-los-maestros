@@ -9,6 +9,7 @@ import { CarritoProvider } from "../context/CarritoContext";
 import { reiniciarBase } from "../data/baseDatos";
 import { obtenerProducto } from "../services/productosService";
 import { crearPedido } from "../services/pedidosService";
+import { iniciarSesionDePrueba } from "../test/sesionDePrueba";
 
 // Se usa el servicio real, pero envuelto en vi.fn() para poder forzar un error en un test
 vi.mock("../services/pedidosService", async (importOriginal) => {
@@ -27,7 +28,7 @@ function guardarCarrito() {
 }
 
 function iniciarSesionComo(usuario) {
-  localStorage.setItem("ferreteria_sesion", JSON.stringify(usuario));
+  iniciarSesionDePrueba(usuario);
 }
 
 function Destino() {

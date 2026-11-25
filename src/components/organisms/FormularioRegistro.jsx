@@ -108,7 +108,11 @@ function FormularioRegistro(props) {
             {props.error && <Alert variant="danger" role="alert">{props.error}</Alert>}
 
             <div className="d-grid">
-              <Boton texto="Crear cuenta" type="submit" />
+              <Boton
+                texto={props.cargando ? "Creando cuenta..." : "Crear cuenta"}
+                type="submit"
+                disabled={props.cargando}
+              />
             </div>
           </Form>
         </Col>

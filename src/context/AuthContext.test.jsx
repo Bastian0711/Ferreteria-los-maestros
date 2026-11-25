@@ -1,14 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { autenticar } from "../services/authService";
+import { CLAVE_SESION } from "../services/sesion";
+import { EVENTO_SESION_EXPIRADA } from "../services/api";
+import { crearTokenDePrueba, iniciarSesionDePrueba } from "../test/sesionDePrueba";
 
-
-vi.mock("../services/authService", () => ({ autenticar: vi.fn() }));
+vi.mock("../services/authService", () => ({ autenticar: vi.fn(), registrarUsuario: vi.fn() }));
 
 const ADMIN = { id: 1, nombre: "Administrador", correo: "admin@maestros.cl", rol: "admin" };
-const CLIENTE = { id: 3, nombre: "Camila", correo: "cliente@maestros.cl", rol: "cliente" };
+const CLIENTE = { id: 4, nombre: "Camila", correo: "cliente@maestros.cl", rol: "cliente" };
 
 function Panel() {
   const { usuario, esAdmin, iniciarSesion, cerrarSesion } = useAuth();
@@ -33,7 +35,6 @@ function renderizar() {
 
 describe("AuthContext", () => {
   beforeEach(() => {
-    localStorage.clear();
     autenticar.mockReset();
   });
 
@@ -48,7 +49,7 @@ describe("AuthContext", () => {
 
   it("inicia sesión cuando las credenciales son válidas", async () => {
     // Arrange
-    autenticar.mockReturnValue(ADMIN);
+    autenticar.mockResolvedValue({ token: crearTokenDePrueba(), usuario: ADMIN });
     renderizar();
 
     // Act
@@ -56,12 +57,12 @@ describe("AuthContext", () => {
 
     // Assert
     expect(autenticar).toHaveBeenCalledWith("alguien@maestros.cl", "Clave123!");
-    expect(screen.getByTestId("correo").textContent).toBe("admin@maestros.cl");
+    expect(await screen.findByText("admin@maestros.cl")).toBeInTheDocument();
   });
 
   it("no inicia sesión cuando las credenciales son inválidas", async () => {
     // Arrange
-    autenticar.mockReturnValue(null);
+    autenticar.mockResolvedValue(null);
     renderizar();
 
     // Act
@@ -73,58 +74,59 @@ describe("AuthContext", () => {
 
   it("esAdmin es verdadero para el administrador", async () => {
     // Arrange
-    autenticar.mockReturnValue(ADMIN);
+    autenticar.mockResolvedValue({ token: crearTokenDePrueba(), usuario: ADMIN });
     renderizar();
 
     // Act
     await userEvent.click(screen.getByRole("button", { name: "Entrar" }));
 
     // Assert
-    expect(screen.getByTestId("admin").textContent).toBe("true");
+    expect(await screen.findByText("true")).toBeInTheDocument();
   });
 
-  it("esAdmin es falso para un cliente", async () => {
+  it("esAdmin es falso para un cliente", () => {
     // Arrange
-    autenticar.mockReturnValue(CLIENTE);
-    renderizar();
+    iniciarSesionDePrueba(CLIENTE);
 
     // Act
-    await userEvent.click(screen.getByRole("button", { name: "Entrar" }));
+    renderizar();
 
     // Assert
     expect(screen.getByTestId("admin").textContent).toBe("false");
   });
 
-  it("guarda la sesión en localStorage al iniciar sesión", async () => {
+  it("guarda el token y el usuario en sessionStorage al iniciar sesión", async () => {
     // Arrange
-    autenticar.mockReturnValue(ADMIN);
+    const token = crearTokenDePrueba();
+    autenticar.mockResolvedValue({ token, usuario: CLIENTE });
     renderizar();
 
     // Act
     await userEvent.click(screen.getByRole("button", { name: "Entrar" }));
+    await screen.findByText("cliente@maestros.cl");
 
     // Assert
-    const guardada = JSON.parse(localStorage.getItem("ferreteria_sesion"));
-    expect(guardada.correo).toBe("admin@maestros.cl");
+    const guardada = JSON.parse(sessionStorage.getItem(CLAVE_SESION));
+    expect(guardada.token).toBe(token);
+    expect(guardada.usuario.correo).toBe("cliente@maestros.cl");
   });
 
   it("cierra la sesión y borra lo guardado", async () => {
     // Arrange
-    autenticar.mockReturnValue(ADMIN);
+    iniciarSesionDePrueba(CLIENTE);
     renderizar();
-    await userEvent.click(screen.getByRole("button", { name: "Entrar" }));
 
     // Act
     await userEvent.click(screen.getByRole("button", { name: "Salir" }));
 
     // Assert
     expect(screen.getByTestId("correo").textContent).toBe("sin sesión");
-    expect(localStorage.getItem("ferreteria_sesion")).toBeNull();
+    expect(sessionStorage.getItem(CLAVE_SESION)).toBeNull();
   });
 
-  it("recupera la sesión guardada al cargar la página", () => {
+  it("recupera la sesión guardada al recargar la página", () => {
     // Arrange
-    localStorage.setItem("ferreteria_sesion", JSON.stringify(CLIENTE));
+    iniciarSesionDePrueba(CLIENTE);
 
     // Act
     renderizar();
@@ -133,15 +135,58 @@ describe("AuthContext", () => {
     expect(screen.getByTestId("correo").textContent).toBe("cliente@maestros.cl");
   });
 
-  it("ignora una sesión guardada con datos corruptos", () => {
+  it("descarta una sesión guardada con el token vencido", () => {
     // Arrange
-    localStorage.setItem("ferreteria_sesion", "{esto no es json");
+    iniciarSesionDePrueba(CLIENTE, -10);
 
     // Act
     renderizar();
 
     // Assert
     expect(screen.getByTestId("correo").textContent).toBe("sin sesión");
+  });
+
+  it("ignora una sesión guardada con datos corruptos", () => {
+    // Arrange
+    sessionStorage.setItem(CLAVE_SESION, "{esto no es json");
+
+    // Act
+    renderizar();
+
+    // Assert
+    expect(screen.getByTestId("correo").textContent).toBe("sin sesión");
+  });
+
+  it("cierra la sesión cuando el backend avisa que el token ya no sirve (401)", () => {
+    // Arrange
+    iniciarSesionDePrueba(CLIENTE);
+    renderizar();
+
+    // Act
+    act(() => {
+      window.dispatchEvent(new Event(EVENTO_SESION_EXPIRADA));
+    });
+
+    // Assert
+    expect(screen.getByTestId("correo").textContent).toBe("sin sesión");
+    expect(sessionStorage.getItem(CLAVE_SESION)).toBeNull();
+  });
+
+  it("cierra la sesión sola cuando vence el token", () => {
+    // Arrange
+    vi.useFakeTimers();
+    iniciarSesionDePrueba(CLIENTE, 2);
+    renderizar();
+    expect(screen.getByTestId("correo").textContent).toBe("cliente@maestros.cl");
+
+    // Act
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    // Assert
+    expect(screen.getByTestId("correo").textContent).toBe("sin sesión");
+    vi.useRealTimers();
   });
 
   it("useAuth funciona sin provider y entrega una sesión vacía", () => {

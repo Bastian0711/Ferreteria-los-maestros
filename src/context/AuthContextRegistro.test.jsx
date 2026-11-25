@@ -1,58 +1,66 @@
-import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
+import { vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthContext";
-import { reiniciarBase } from "../data/baseDatos";
+import { registrarUsuario } from "../services/authService";
+import { CLAVE_SESION } from "../services/sesion";
+import { crearTokenDePrueba } from "../test/sesionDePrueba";
+
+vi.mock("../services/authService", () => ({ autenticar: vi.fn(), registrarUsuario: vi.fn() }));
+
+const DATOS = { nombre: "Ana", apellidos: "Pérez", correo: "ana@correo.cl", contrasena: "Nueva123!" };
+const NUEVA = { id: 7, nombre: "Ana", correo: "ana@correo.cl", rol: "cliente" };
 
 function Panel() {
   const { usuario, registrar } = useAuth();
-  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
 
-  function intentar(correo) {
+  async function crear() {
     try {
-      registrar({ nombre: "Ana", apellidos: "Pérez", correo, contrasena: "Nueva123!" });
+      await registrar(DATOS);
     } catch (e) {
-      setMensaje(e.message);
+      setError(e.message);
     }
   }
 
   return (
     <div>
       <p data-testid="correo">{usuario ? usuario.correo : "sin sesión"}</p>
-      <p data-testid="mensaje">{mensaje}</p>
-      <button onClick={() => intentar("ana@correo.cl")}>Registrar nueva</button>
-      <button onClick={() => intentar("cliente@maestros.cl")}>Registrar repetida</button>
+      <p data-testid="error">{error}</p>
+      <button onClick={crear}>Crear</button>
     </div>
   );
 }
 
-describe("AuthContext - registrar", () => {
+describe("AuthContext.registrar", () => {
   beforeEach(() => {
-    localStorage.clear();
-    reiniciarBase();
+    registrarUsuario.mockReset();
   });
 
   it("crea la cuenta y deja la sesión iniciada", async () => {
     // Arrange
+    registrarUsuario.mockResolvedValue({ token: crearTokenDePrueba(), usuario: NUEVA });
     render(<AuthProvider><Panel /></AuthProvider>);
 
     // Act
-    await userEvent.click(screen.getByRole("button", { name: "Registrar nueva" }));
+    await userEvent.click(screen.getByRole("button", { name: "Crear" }));
 
     // Assert
-    expect(screen.getByTestId("correo").textContent).toBe("ana@correo.cl");
-    expect(JSON.parse(localStorage.getItem("ferreteria_sesion")).correo).toBe("ana@correo.cl");
+    expect(await screen.findByText("ana@correo.cl")).toBeInTheDocument();
+    expect(JSON.parse(sessionStorage.getItem(CLAVE_SESION)).usuario.correo).toBe("ana@correo.cl");
   });
 
   it("deja pasar el error y no inicia sesión si el correo ya existe", async () => {
     // Arrange
+    registrarUsuario.mockRejectedValue(new Error("Ya existe una cuenta con ese correo."));
     render(<AuthProvider><Panel /></AuthProvider>);
 
     // Act
-    await userEvent.click(screen.getByRole("button", { name: "Registrar repetida" }));
+    await userEvent.click(screen.getByRole("button", { name: "Crear" }));
 
     // Assert
-    expect(screen.getByTestId("mensaje").textContent).toBe("Ya existe una cuenta con ese correo.");
+    expect(await screen.findByText("Ya existe una cuenta con ese correo.")).toBeInTheDocument();
     expect(screen.getByTestId("correo").textContent).toBe("sin sesión");
   });
 });

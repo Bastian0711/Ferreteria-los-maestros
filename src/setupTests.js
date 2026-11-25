@@ -18,3 +18,8 @@ if (!window.matchMedia) {
 // lo tienen, pero jsdom, el navegador simulado de Vitest, no
 // Por eso npm run dev funcionaba perfecto y solo fallaban 
 // los tests que renderizaban PlantillaAdmin
+
+// La sesión (token) vive en sessionStorage: se limpia entre pruebas para que no dependan entre sí
+afterEach(() => {
+  sessionStorage.clear()
+})

@@ -295,13 +295,14 @@ export function crearPedido({ usuario, items, entrega, datosCliente }) {
   const pedido = {
     numero: `FM-${String(estado.ultimoPedido).padStart(5, "0")}`,
     fecha: new Date().toISOString(),
-    usuarioId: cliente ? cliente.id : null,
+    usuarioId: usuario ? usuario.id : null,
     cliente: { ...datosCliente },
     entrega: { tipo: entrega.tipo, direccion: entrega.direccion || "" },
     items: lineas,
     total: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
     estado: ESTADOS_PEDIDO[0],
-    pago: cliente && cliente.cuentaCorriente
+    // El usuario de la sesión (ms-usuarios) ya trae cuentaCorriente; si no, se busca en la base simulada
+    pago: usuario && (usuario.cuentaCorriente ?? (cliente && cliente.cuentaCorriente))
       ? "Pago pendiente a fin de mes"
       : "Pago al retirar o recibir",
   };

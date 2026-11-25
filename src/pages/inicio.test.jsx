@@ -6,6 +6,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { CatalogoProvider } from "../context/CatalogoContext";
 import { CarritoProvider } from "../context/CarritoContext";
 import { reiniciarBase } from "../data/baseDatos";
+import { iniciarSesionDePrueba } from "../test/sesionDePrueba";
 
 // Muestra la dirección a la que se navegó, para comprobar los enlaces de la portada.
 function UbicacionActual() {
@@ -89,7 +90,7 @@ describe("Inicio", () => {
   it("no ofrece iniciar sesión cuando ya hay una sesión", () => {
     // Arrange
     const cliente = { id: 3, nombre: "Camila", correo: "cliente@maestros.cl", rol: "cliente" };
-    localStorage.setItem("ferreteria_sesion", JSON.stringify(cliente));
+    iniciarSesionDePrueba(cliente);
 
     // Act
     renderizar();

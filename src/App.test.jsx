@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CatalogoProvider } from "./context/CatalogoContext";
 import { CarritoProvider } from "./context/CarritoContext";
 import { reiniciarBase } from "./data/baseDatos";
+import { iniciarSesionDePrueba } from "./test/sesionDePrueba";
 
 const ADMIN = { id: 1, nombre: "Administrador", correo: "admin@maestros.cl", rol: "admin" };
 const CLIENTE = { id: 3, nombre: "Camila", correo: "cliente@maestros.cl", rol: "cliente" };
@@ -61,7 +62,7 @@ describe("App - rutas", () => {
 
   it("lleva a la portada si un cliente intenta entrar al panel", () => {
     // Arrange
-    localStorage.setItem("ferreteria_sesion", JSON.stringify(CLIENTE));
+    iniciarSesionDePrueba(CLIENTE);
 
     // Act
     abrir("/admin");
@@ -72,7 +73,7 @@ describe("App - rutas", () => {
 
   it("deja entrar al administrador al resumen", () => {
     // Arrange
-    localStorage.setItem("ferreteria_sesion", JSON.stringify(ADMIN));
+    iniciarSesionDePrueba(ADMIN);
 
     // Act
     abrir("/admin");

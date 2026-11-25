@@ -1,75 +1,84 @@
-import { autenticar, registrarUsuario } from "./authService";
-import { reiniciarBase, buscarUsuarioPorCorreo } from "../data/baseDatos";
+import { vi } from "vitest";
+import { registrarUsuario } from "./authService";
+import { apiUsuarios } from "./api";
 
-const DATOS = {
-  nombre: "Ana",
-  apellidos: "Pérez Soto",
-  correo: "ana@correo.cl",
-  contrasena: "Nueva123!",
-  direccion: "Calle 1, La Serena",
-};
+vi.mock("./api", async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, apiUsuarios: { post: vi.fn() } };
+});
 
-describe("authService - registrarUsuario", () => {
+const DATOS = { nombre: " Ana ", apellidos: " Pérez Soto ", correo: "ana@correo.cl", contrasena: "Nueva123!", direccion: "" };
+const NUEVA = { id: 7, nombre: "Ana", apellidos: "Pérez Soto", correo: "ana@correo.cl", rol: "cliente", activo: true };
+
+describe("authService.registrarUsuario", () => {
   beforeEach(() => {
-    localStorage.clear();
-    reiniciarBase();
+    apiUsuarios.post.mockReset();
   });
 
-  it("crea una cuenta de cliente sin exponer la contraseña", () => {
-    // Arrange + Act
-    const usuario = registrarUsuario(DATOS);
-
-    // Assert
-    expect(usuario.rol).toBe("cliente");
-    expect(usuario.cuentaCorriente).toBe(false);
-    expect(usuario).not.toHaveProperty("contrasena");
-  });
-
-  it("ignora un rol de administrador enviado en los datos", () => {
+  it("crea la cuenta en el backend y luego inicia sesión", async () => {
     // Arrange
-    const datos = { ...DATOS, rol: "admin", cuentaCorriente: true };
+    apiUsuarios.post
+      .mockResolvedValueOnce({ data: NUEVA })
+      .mockResolvedValueOnce({ data: { accessToken: "token-nuevo", usuario: NUEVA } });
 
     // Act
-    const usuario = registrarUsuario(datos);
+    const sesion = await registrarUsuario(DATOS);
 
     // Assert
-    expect(usuario.rol).toBe("cliente");
-    expect(usuario.cuentaCorriente).toBe(false);
+    expect(apiUsuarios.post).toHaveBeenNthCalledWith(1, "/auth/registro", {
+      nombre: "Ana", apellidos: "Pérez Soto", correo: "ana@correo.cl", password: "Nueva123!", direccion: "",
+    });
+    expect(apiUsuarios.post).toHaveBeenNthCalledWith(2, "/auth/login", { correo: "ana@correo.cl", password: "Nueva123!" });
+    expect(sesion.token).toBe("token-nuevo");
+    expect(sesion.usuario.rol).toBe("cliente");
   });
 
-  it("permite iniciar sesión con la cuenta recién creada", () => {
+  it("no envía rol: lo asigna el backend", async () => {
     // Arrange
-    registrarUsuario(DATOS);
+    apiUsuarios.post
+      .mockResolvedValueOnce({ data: NUEVA })
+      .mockResolvedValueOnce({ data: { accessToken: "t", usuario: NUEVA } });
 
     // Act
-    const usuario = autenticar("ana@correo.cl", "Nueva123!");
+    await registrarUsuario({ ...DATOS, rol: "admin" });
 
     // Assert
-    expect(usuario).not.toBeNull();
-    expect(buscarUsuarioPorCorreo("ana@correo.cl")).toBeDefined();
+    expect(apiUsuarios.post.mock.calls[0][1]).not.toHaveProperty("rol");
   });
 
-  it("rechaza un correo que ya está registrado", () => {
+  it("muestra el mensaje del backend si el correo ya existe (409)", async () => {
     // Arrange
-    const datos = { ...DATOS, correo: "cliente@maestros.cl" };
+    apiUsuarios.post.mockRejectedValue({ response: { status: 409, data: { mensaje: "Ya existe una cuenta con ese correo.", detalles: [] } } });
 
     // Act + Assert
-    expect(() => registrarUsuario(datos)).toThrow("Ya existe una cuenta con ese correo.");
+    await expect(registrarUsuario(DATOS)).rejects.toThrow("Ya existe una cuenta con ese correo.");
   });
 
-  it("rechaza una contraseña débil", () => {
-    // Arrange
-    const datos = { ...DATOS, contrasena: "corta" };
-
-    // Act + Assert
-    expect(() => registrarUsuario(datos)).toThrow("La contraseña debe tener al menos 8 caracteres.");
+  it("rechaza una contraseña débil sin llamar a la API", async () => {
+    // Arrange + Act + Assert
+    await expect(registrarUsuario({ ...DATOS, contrasena: "1234" })).rejects.toThrow();
+    expect(apiUsuarios.post).not.toHaveBeenCalled();
   });
 
-  it("rechaza un nombre vacío", () => {
+  it("rechaza un nombre vacío sin llamar a la API", async () => {
+    // Arrange + Act + Assert
+    await expect(registrarUsuario({ ...DATOS, nombre: "   " })).rejects.toThrow("El nombre es obligatorio.");
+    expect(apiUsuarios.post).not.toHaveBeenCalled();
+  });
+
+  it("rechaza apellidos vacíos sin llamar a la API", async () => {
+    // Arrange + Act + Assert
+    await expect(registrarUsuario({ ...DATOS, apellidos: "" })).rejects.toThrow("Los apellidos son obligatorios.");
+    expect(apiUsuarios.post).not.toHaveBeenCalled();
+  });
+
+  it("avisa si la cuenta se creó pero el inicio de sesión falla", async () => {
     // Arrange
-    const datos = { ...DATOS, nombre: "   " };
+    apiUsuarios.post
+      .mockResolvedValueOnce({ data: NUEVA })
+      .mockRejectedValueOnce({ response: { status: 401, data: {} } });
 
     // Act + Assert
-    expect(() => registrarUsuario(datos)).toThrow("El nombre es obligatorio.");
+    await expect(registrarUsuario(DATOS)).rejects.toThrow("La cuenta se creó");
   });
 });
