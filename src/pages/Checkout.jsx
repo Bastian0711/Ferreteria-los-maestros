@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Alert, Container, Row, Col } from "react-bootstrap";
 import { Navigate, useNavigate } from "react-router-dom";
 import PlantillaPublica from "../components/templates/PlantillaPublica";
 import FormularioCheckout from "../components/organisms/FormularioCheckout";
@@ -7,48 +7,68 @@ import ResumenTotales from "../components/molecules/ResumenTotales";
 import { useTituloPagina } from "../hooks/useTituloPagina";
 import { useAuth } from "../context/AuthContext";
 import { useCarrito } from "../context/CarritoContext";
+import { useCatalogo } from "../context/CatalogoContext";
 import { crearPedido } from "../services/pedidosService";
+
+const ROLES_QUE_COMPRAN = ["cliente", "contratista"];
 
 function Checkout() {
   useTituloPagina("Confirmar solicitud");
   const navigate = useNavigate();
   const { usuario } = useAuth();
   const { items, total, cantidadTotal, limpiar } = useCarrito();
+  const { cargando, recargar } = useCatalogo();
 
   const [confirmada, setConfirmada] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+
+  // El pedido queda a nombre del usuario del token: hay que iniciar sesión para confirmar
+  if (!usuario) {
+    return <Navigate to="/login" replace state={{ desde: "/checkout" }} />;
+  }
+
+  if (cargando) {
+    return (
+      <PlantillaPublica>
+        <p className="text-center text-muted py-5">Cargando tu solicitud...</p>
+      </PlantillaPublica>
+    );
+  }
 
   if (items.length === 0 && !confirmada) {
     return <Navigate to="/carrito" replace />;
   }
 
-  function manejarConfirmar(datos) {
+  const puedeComprar = ROLES_QUE_COMPRAN.includes(usuario.rol);
+
+  async function manejarConfirmar(datos) {
+    setEnviando(true);
     try {
-      const pedido = crearPedido({
-        usuario,
+      const pedido = await crearPedido({
         items: items.map((item) => ({ codigo: item.codigo, cantidad: item.cantidad })),
         entrega: datos.entrega,
-        datosCliente: { nombre: datos.nombre, apellidos: datos.apellidos, correo: datos.correo },
       });
 
-      // Ambos cambios se aplican juntos: la pagina ya sabe que esta confirmada cuando el carrito queda vacio
       setConfirmada(true);
       limpiar();
+      recargar(); // el stock cambió en el servidor
       navigate(`/pedido/${pedido.numero}`);
     } catch (error) {
-      // El carrito se conserva para poder reintentar
+      // Por ejemplo, 409: otro cliente compró antes y ya no alcanza el stock.
+      // El carrito se conserva para poder ajustar y reintentar.
+      recargar();
       navigate("/pedido/error", { state: { motivo: error.message } });
+    } finally {
+      setEnviando(false);
     }
   }
 
-  // Si hay sesion, el formulario parte con sus datos
-  const datosIniciales = usuario
-    ? {
-        nombre: usuario.nombre,
-        apellidos: usuario.apellidos,
-        correo: usuario.correo,
-        direccion: usuario.direccion,
-      }
-    : undefined;
+  const datosIniciales = {
+    nombre: usuario.nombre,
+    apellidos: usuario.apellidos,
+    correo: usuario.correo,
+    direccion: usuario.direccion,
+  };
 
   return (
     <PlantillaPublica>
@@ -57,11 +77,18 @@ function Checkout() {
 
         <Row className="g-4">
           <Col xs={12} lg={7}>
-            <FormularioCheckout
-              datosIniciales={datosIniciales}
-              cuentaCorriente={Boolean(usuario && usuario.cuentaCorriente)}
-              onConfirmar={manejarConfirmar}
-            />
+            {puedeComprar ? (
+              <FormularioCheckout
+                datosIniciales={datosIniciales}
+                cuentaCorriente={Boolean(usuario.cuentaCorriente)}
+                enviando={enviando}
+                onConfirmar={manejarConfirmar}
+              />
+            ) : (
+              <Alert variant="warning">
+                Las cuentas de administración y venta no hacen solicitudes. Inicia sesión como cliente.
+              </Alert>
+            )}
           </Col>
 
           <Col xs={12} lg={5}>

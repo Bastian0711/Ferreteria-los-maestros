@@ -41,6 +41,11 @@ export const apiUsuarios = crearClienteApi(
   import.meta.env.VITE_API_USUARIOS || "http://localhost:8081/api/v1"
 );
 
+// ms-catalogo (puerto 8082): productos, categorías y pedidos. URL real en .env.local: VITE_API_CATALOGO
+export const apiCatalogo = crearClienteApi(
+  import.meta.env.VITE_API_CATALOGO || "http://localhost:8082/api/v1"
+);
+
 // Convierte un error de Axios en un mensaje para mostrar en pantalla
 export function mensajeDeError(error, porDefecto = "Ocurrió un error. Inténtalo nuevamente.") {
   if (!error || !error.response) {

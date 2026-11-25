@@ -16,7 +16,7 @@ function Catalogo() {
   useTituloPagina("Catálogo");
   const navigate = useNavigate();
   const [parametros] = useSearchParams();
-  const { productos, categorias } = useCatalogo();
+  const { productos, categorias, cargando, error } = useCatalogo();
   const { agregar, items } = useCarrito();
 
 
@@ -73,6 +73,9 @@ function Catalogo() {
             </div>
           </Col>
         </Row>
+
+        {error && <Alert variant="danger">{error}</Alert>}
+        {cargando && <p className="text-muted">Cargando catálogo...</p>}
 
         {aviso && (
           <Alert variant={aviso.variante} dismissible onClose={() => setAviso(null)}>

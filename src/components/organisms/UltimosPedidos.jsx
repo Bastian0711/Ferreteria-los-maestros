@@ -1,5 +1,7 @@
 import Precio from "../atoms/Precio";
 import EtiquetaEstado from "../atoms/EtiquetaEstado";
+import Boton from "../atoms/Boton";
+import { siguienteEstado } from "../../utils/estadosPedido";
 
 
 function UltimosPedidos(props) {
@@ -19,6 +21,7 @@ function UltimosPedidos(props) {
                         <th>Total</th>
                         <th>Estado</th>
                         <th>Pago</th>
+                        {props.onAvanzar && <th>Acción</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -33,6 +36,17 @@ function UltimosPedidos(props) {
                                 <EtiquetaEstado estado={pedido.estado} />
                             </td>
                             <td>{pedido.pago}</td>
+                            {props.onAvanzar && (
+                                <td>
+                                    {siguienteEstado(pedido.estado) && (
+                                        <Boton
+                                            texto={`Pasar a ${siguienteEstado(pedido.estado)}`}
+                                            variante="outline-primary btn-sm"
+                                            onClick={() => props.onAvanzar(pedido)}
+                                        />
+                                    )}
+                                </td>
+                            )}
                         </tr>
                     ))}
                 </tbody>

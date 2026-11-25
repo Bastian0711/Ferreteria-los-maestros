@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import FormularioLogin from "../components/organisms/FormularioLogin";
 import { useTituloPagina } from "../hooks/useTituloPagina";
 import { useAuth } from "../context/AuthContext";
@@ -8,6 +8,7 @@ import PlantillaPublica from "../components/templates/PlantillaPublica";
 function Login() {
   useTituloPagina("Iniciar sesión");
   const navigate = useNavigate();
+  const location = useLocation();
   const { iniciarSesion } = useAuth();
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -21,7 +22,9 @@ function Login() {
         setError("Correo o contraseña incorrectos.");
         return;
       }
-      navigate(usuario.rol === "admin" ? "/admin/productos" : "/catalogo");
+      // Si venía de una página que exige sesión (por ejemplo, el checkout), vuelve a ella
+      const desde = location.state && location.state.desde;
+      navigate(desde || (usuario.rol === "admin" ? "/admin/productos" : "/catalogo"));
     } catch (e) {
       // Sin conexión con el servidor u otro error del backend
       setError(e.message);

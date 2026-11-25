@@ -1,30 +1,65 @@
-import {
-  crearPedido as bdCrearPedido,
-  obtenerPedido as bdObtenerPedido,
-  listarPedidos as bdListarPedidos,
-  listarPedidosDeUsuario as bdListarPedidosDeUsuario,
-  actualizarEstadoPedido as bdActualizarEstadoPedido,
-  ESTADOS_PEDIDO as BD_ESTADOS_PEDIDO,
-} from "../data/baseDatos.js";
+import { apiCatalogo, mensajeDeError } from "./api";
 
-export const ESTADOS_PEDIDO = BD_ESTADOS_PEDIDO;
+export { ESTADOS_PEDIDO, ESTADO_ANULADO, siguienteEstado } from "../utils/estadosPedido";
 
-export function crearPedido(datos) {
-  return bdCrearPedido(datos);
+// Convierte un pedido de ms-catalogo a la forma que usan las pantallas
+export function adaptarPedido(p) {
+  return {
+    id: p.id,
+    numero: p.numero,
+    fecha: p.fecha,
+    estado: p.estado,
+    entrega: { tipo: p.tipoEntrega, direccion: p.direccionDespacho || "" },
+    pago: p.condicionPago,
+    total: p.total,
+    usuarioId: p.idUsuario,
+    items: (p.items || []).map((item) => ({ ...item })),
+  };
 }
 
-export function obtenerPedido(numero) {
-  return bdObtenerPedido(numero);
+async function pedir(promesa, porDefecto) {
+  try {
+    const { data } = await promesa;
+    return data;
+  } catch (error) {
+    const fallo = new Error(mensajeDeError(error, porDefecto));
+    fallo.status = error.response ? error.response.status : 0;
+    throw fallo;
+  }
 }
 
-export function listarPedidos() {
-  return bdListarPedidos();
+// POST /pedidos. El backend calcula precios, total, condición de pago y usuario (desde el token).
+// Si no hay stock suficiente, responde 409 y el mensaje trae el detalle.
+export async function crearPedido({ items, entrega }) {
+  const cuerpo = {
+    items: items.map((item) => ({ codigo: item.codigo, cantidad: item.cantidad })),
+    tipoEntrega: entrega.tipo,
+    direccionDespacho: entrega.tipo === "despacho" ? entrega.direccion : null,
+  };
+  return adaptarPedido(await pedir(apiCatalogo.post("/pedidos", cuerpo), "No pudimos registrar tu solicitud."));
 }
 
-export function listarPedidosDeUsuario(usuarioId) {
-  return bdListarPedidosDeUsuario(usuarioId);
+// El dueño, un admin o un vendedor. Si no tiene permiso, el backend responde 403.
+export async function obtenerPedido(numero) {
+  return adaptarPedido(await pedir(apiCatalogo.get(`/pedidos/${numero}`), "No encontramos la solicitud."));
 }
 
-export function actualizarEstadoPedido(numero, nuevoEstado) {
-  return bdActualizarEstadoPedido(numero, nuevoEstado);
+// Cliente y contratista reciben solo los suyos; admin y vendedor, todos (más recientes primero)
+export async function listarPedidos() {
+  const datos = await pedir(apiCatalogo.get("/pedidos"), "No pudimos cargar los pedidos.");
+  return datos.map(adaptarPedido);
+}
+
+export async function cambiarEstadoPedido(numero, estado) {
+  return adaptarPedido(
+    await pedir(apiCatalogo.patch(`/pedidos/${numero}/estado`, { estado }), "No pudimos cambiar el estado.")
+  );
+}
+
+export async function anularPedido(numero) {
+  return adaptarPedido(await pedir(apiCatalogo.patch(`/pedidos/${numero}/anular`), "No pudimos anular la solicitud."));
+}
+
+export async function obtenerSaldo() {
+  return pedir(apiCatalogo.get("/pedidos/saldo"), "No pudimos obtener tu saldo.");
 }

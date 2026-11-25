@@ -12,7 +12,7 @@ import { conStockDisponible } from "../utils/carrito";
 function DetalleProducto() {
   const { codigo } = useParams();
   const navigate = useNavigate();
-  const { productos, categorias } = useCatalogo();
+  const { productos, categorias, cargando } = useCatalogo();
   const { agregar, items } = useCarrito();
   const [aviso, setAviso] = useState(null);
 
@@ -28,6 +28,15 @@ function DetalleProducto() {
       agregado
         ? { variante: "success", mensaje: `Agregaste ${cantidad} a tu solicitud.` }
         : { variante: "warning", mensaje: "No hay stock suficiente para esa cantidad." }
+    );
+  }
+
+  // Mientras llega el catálogo desde la API, todavía no se sabe si existe
+  if (cargando) {
+    return (
+      <PlantillaPublica>
+        <p className="text-center text-muted py-5">Cargando...</p>
+      </PlantillaPublica>
     );
   }
 

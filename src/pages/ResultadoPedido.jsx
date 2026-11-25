@@ -1,4 +1,5 @@
-import { Container } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Alert, Container } from "react-bootstrap";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import PlantillaPublica from "../components/templates/PlantillaPublica";
 import ResumenPedido from "../components/organisms/ResumenPedido";
@@ -6,31 +7,53 @@ import MensajeResultado from "../components/organisms/MensajeResultado";
 import Boton from "../components/atoms/Boton";
 import { useTituloPagina } from "../hooks/useTituloPagina";
 import { useAuth } from "../context/AuthContext";
-import { obtenerPedido } from "../services/pedidosService";
+import { useCatalogo } from "../context/CatalogoContext";
+import { obtenerPedido, anularPedido } from "../services/pedidosService";
 
 const MOTIVO_POR_DEFECTO = "No pudimos registrar tu solicitud. Inténtalo nuevamente.";
 
-// /pedido/:numero muestra el comprobante. /pedido/error muestra el aviso de fallo.
+// /pedido/:numero muestra el comprobante (lo pide a ms-catalogo). /pedido/error muestra el aviso de fallo.
 function ResultadoPedido() {
   const { numero } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { usuario } = useAuth();
+  const { recargar } = useCatalogo();
 
   const esError = numero === "error";
-  const pedido = esError ? undefined : obtenerPedido(numero);
+  const debeCargar = !esError && Boolean(usuario);
+  const [resultado, setResultado] = useState({ cargando: debeCargar, pedido: null });
+  const [aviso, setAviso] = useState(null);
 
-  // Privacidad: un pedido de un cliente registrado solo lo ve ese cliente o un administrador.
-  // Los pedidos hechos sin sesión (usuarioId nulo) se pueden ver con su número.
-  const puedeVer =
-    pedido &&
-    (pedido.usuarioId === null ||
-      (usuario && (usuario.id === pedido.usuarioId || usuario.rol === "admin")));
+  // La privacidad la controla el backend: si el pedido es de otra persona responde 403
+  useEffect(() => {
+    if (!debeCargar) return undefined;
+    let vigente = true;
+    obtenerPedido(numero)
+      .then((pedido) => vigente && setResultado({ cargando: false, pedido }))
+      .catch(() => vigente && setResultado({ cargando: false, pedido: null }));
+    return () => {
+      vigente = false;
+    };
+  }, [numero, debeCargar]);
 
+  const pedido = resultado.pedido;
   let titulo = "Solicitud no encontrada";
   if (esError) titulo = "Error en la solicitud";
-  if (puedeVer) titulo = `Solicitud ${pedido.numero}`;
+  if (resultado.cargando) titulo = "Cargando solicitud";
+  if (pedido) titulo = `Solicitud ${pedido.numero}`;
   useTituloPagina(titulo);
+
+  async function anular() {
+    try {
+      const anulado = await anularPedido(pedido.numero);
+      setResultado({ cargando: false, pedido: anulado });
+      setAviso({ variante: "success", mensaje: "Anulaste la solicitud. El stock volvió al catálogo." });
+      recargar();
+    } catch (error) {
+      setAviso({ variante: "danger", mensaje: error.message });
+    }
+  }
 
   if (esError) {
     return (
@@ -40,22 +63,30 @@ function ResultadoPedido() {
             tipo="error"
             titulo="No pudimos registrar tu solicitud"
             descripcion={(location.state && location.state.motivo) || MOTIVO_POR_DEFECTO}
-            textoBoton="Reintentar"
-            onAccion={() => navigate("/checkout")}
+            textoBoton="Revisar mi solicitud"
+            onAccion={() => navigate("/carrito")}
           />
         </div>
       </PlantillaPublica>
     );
   }
 
-  if (!puedeVer) {
+  if (resultado.cargando) {
+    return (
+      <PlantillaPublica>
+        <p className="text-center text-muted py-5">Cargando solicitud...</p>
+      </PlantillaPublica>
+    );
+  }
+
+  if (!pedido) {
     return (
       <PlantillaPublica>
         <div className="py-5">
           <MensajeResultado
             tipo="error"
             titulo="Solicitud no encontrada"
-            descripcion="La solicitud no existe o no tienes permiso para verla."
+            descripcion="La solicitud no existe, no tienes permiso para verla o tu sesión expiró."
             textoBoton="Ir al catálogo"
             onAccion={() => navigate("/catalogo")}
           />
@@ -63,6 +94,12 @@ function ResultadoPedido() {
       </PlantillaPublica>
     );
   }
+
+  // El backend no guarda el nombre del cliente en el pedido: si es propio, se muestra el de la sesión
+  const esPropio = usuario && usuario.id === pedido.usuarioId;
+  const cliente = esPropio
+    ? { nombre: usuario.nombre, apellidos: usuario.apellidos, correo: usuario.correo }
+    : { nombre: `Cliente N° ${pedido.usuarioId}`, apellidos: "", correo: "" };
 
   return (
     <PlantillaPublica>
@@ -75,11 +112,20 @@ function ResultadoPedido() {
           </p>
         </div>
 
-        <ResumenPedido pedido={pedido} />
+        {aviso && (
+          <Alert variant={aviso.variante} dismissible onClose={() => setAviso(null)}>
+            {aviso.mensaje}
+          </Alert>
+        )}
+
+        <ResumenPedido pedido={{ ...pedido, cliente }} />
 
         <div className="d-flex flex-wrap gap-2 justify-content-center mt-4">
           <Boton texto="Seguir comprando" onClick={() => navigate("/catalogo")} />
           <Boton texto="Volver al inicio" variante="outline-secondary" onClick={() => navigate("/")} />
+          {esPropio && pedido.estado === "Pendiente" && (
+            <Boton texto="Anular solicitud" variante="outline-danger" onClick={anular} />
+          )}
         </div>
       </Container>
     </PlantillaPublica>

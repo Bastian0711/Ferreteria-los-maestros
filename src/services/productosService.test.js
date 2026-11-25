@@ -1,307 +1,112 @@
 import { vi } from "vitest";
-import {
-  listarProductos,
-  obtenerProducto,
-  crearProducto,
-  actualizarProducto,
-  eliminarProducto,
-  listarProductosCriticos,
-  listarProductosEnOferta,
-  listarProductosDestacados,
-  listarCategorias,
-  precioFinal,
-  suscribirCambios,
-} from "./productosService";
-import { reiniciarBase } from "../data/baseDatos";
+import { apiCatalogo } from "./api";
 
-const PRODUCTO_NUEVO = {
-  codigo: "ZZ001",
-  nombre: "Producto de prueba",
-  precioVenta: 1000,
-  stock: 5,
-  stockMinimo: 2,
+// setupTests.js reemplaza este servicio por uno simulado; aquí se prueba el real
+const servicio = await vi.importActual("./productosService");
+
+vi.mock("./api", async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, apiCatalogo: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } };
+});
+
+const PRODUCTO_API = {
+  codigo: "MC002", nombre: "Cemento Melón blanco 25 kg", marca: "Melón", unidad: "Saco 25 kg",
+  precioVenta: 7490, precioOferta: null, oferta: false, precioFinal: 7490,
+  stock: 40, stockMinimo: 10, stockCritico: false, destacado: false, categoriaId: 1, categoria: "Materiales de Construcción",
 };
 
-describe("productosService", () => {
+describe("productosService (API real)", () => {
   beforeEach(() => {
-    localStorage.clear();
-    reiniciarBase();
+    vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("adapta el producto de la API: categoría como texto e imagen local", () => {
+    // Arrange + Act
+    const producto = servicio.adaptarProducto(PRODUCTO_API);
+
+    // Assert
+    expect(producto.categoriaId).toBe("1");
+    expect(producto.imagen).toBe("/productos/MC002.jpg");
+    expect(producto.oferta).toBe(false);
   });
 
-  describe("lectura", () => {
-    it("lista los 85 productos de la semilla", () => {
-      // Arrange + Act
-      const productos = listarProductos();
+  it("lista los productos desde GET /productos y los guarda en caché", async () => {
+    // Arrange
+    apiCatalogo.get.mockResolvedValue({ data: [PRODUCTO_API] });
 
-      // Assert
-      expect(productos).toHaveLength(85);
-    });
+    // Act
+    const productos = await servicio.listarProductos();
 
-    it("lista las 10 categorías", () => {
-      // Arrange + Act
-      const categorias = listarCategorias();
-
-      // Assert
-      expect(categorias).toHaveLength(10);
-    });
-
-    it("obtiene un producto por su código", () => {
-      // Arrange
-      const codigo = "MC001";
-
-      // Act
-      const producto = obtenerProducto(codigo);
-
-      // Assert
-      expect(producto.nombre).toBe("Cemento Polpaico gris 25 kg");
-    });
-
-    it("devuelve undefined si el código no existe", () => {
-      // Arrange
-      const codigo = "NO-EXISTE";
-
-      // Act
-      const producto = obtenerProducto(codigo);
-
-      // Assert
-      expect(producto).toBeUndefined();
-    });
+    // Assert
+    expect(apiCatalogo.get).toHaveBeenCalledWith("/productos");
+    expect(productos).toHaveLength(1);
+    expect(servicio.catalogoEnCache().productos[0].codigo).toBe("MC002");
   });
 
-  describe("creación", () => {
-    it("crea un producto y aumenta el total en uno", () => {
-      // Arrange
-      const totalAntes = listarProductos().length;
+  it("lista las categorías con el id como texto", async () => {
+    // Arrange
+    apiCatalogo.get.mockResolvedValue({ data: [{ id: 3, nombre: "Herramientas Manuales" }] });
 
-      // Act
-      crearProducto(PRODUCTO_NUEVO);
+    // Act
+    const categorias = await servicio.listarCategorias();
 
-      // Assert
-      expect(listarProductos()).toHaveLength(totalAntes + 1);
-      expect(obtenerProducto("ZZ001").nombre).toBe("Producto de prueba");
-    });
+    // Assert
+    expect(categorias).toEqual([{ id: "3", nombre: "Herramientas Manuales" }]);
+  });
 
-    it("guarda el código en mayúsculas", () => {
-      // Arrange
-      const datos = { ...PRODUCTO_NUEVO, codigo: "zz001" };
+  it("convierte los datos del formulario al cuerpo que espera la API", () => {
+    // Arrange
+    const datos = {
+      codigo: "MC099", nombre: "Prueba", marca: "X", unidad: "Unidad", precioVenta: "1000",
+      stock: "5", stockMinimo: "1", oferta: false, precioOferta: 800, destacado: true, categoriaId: "1",
+    };
 
-      // Act
-      const creado = crearProducto(datos);
+    // Act
+    const cuerpo = servicio.aProductoApi(datos);
 
-      // Assert
-      expect(creado.codigo).toBe("ZZ001");
-    });
-
-    it("rechaza un código que ya existe", () => {
-      // Arrange
-      const datos = { ...PRODUCTO_NUEVO, codigo: "MC001" };
-
-      // Act
-      const crear = () => crearProducto(datos);
-
-      // Assert
-      expect(crear).toThrow("Ya existe un producto con el código MC001.");
-    });
-
-    it("rechaza un producto sin nombre", () => {
-      // Arrange
-      const datos = { ...PRODUCTO_NUEVO, nombre: "  " };
-
-      // Act
-      const crear = () => crearProducto(datos);
-
-      // Assert
-      expect(crear).toThrow("El nombre es obligatorio.");
-    });
-
-    it("rechaza un precio de venta negativo", () => {
-      // Arrange
-      const datos = { ...PRODUCTO_NUEVO, precioVenta: -5 };
-
-      // Act
-      const crear = () => crearProducto(datos);
-
-      // Assert
-      expect(crear).toThrow("El precio de venta debe ser un número mayor o igual a 0.");
+    // Assert
+    expect(cuerpo).toEqual({
+      codigo: "MC099", nombre: "Prueba", marca: "X", unidad: "Unidad", precioVenta: 1000,
+      precioOferta: null, stock: 5, stockMinimo: 1, destacado: true, categoriaId: 1,
     });
   });
 
-  describe("actualización", () => {
-    it("modifica solo los campos enviados", () => {
-      // Arrange
-      const nombreAntes = obtenerProducto("MC001").nombre;
+  it("crea un producto con POST /productos", async () => {
+    // Arrange
+    apiCatalogo.post.mockResolvedValue({ data: PRODUCTO_API });
 
-      // Act
-      actualizarProducto("MC001", { stock: 10 });
+    // Act
+    const creado = await servicio.crearProducto({ ...PRODUCTO_API, categoriaId: "1" });
 
-      // Assert
-      const producto = obtenerProducto("MC001");
-      expect(producto.stock).toBe(10);
-      expect(producto.nombre).toBe(nombreAntes);
-    });
-
-    it("no permite cambiar el código del producto", () => {
-      // Arrange
-      const cambios = { codigo: "XX999", stock: 1 };
-
-      // Act
-      actualizarProducto("MC001", cambios);
-
-      // Assert
-      expect(obtenerProducto("MC001")).toBeDefined();
-      expect(obtenerProducto("XX999")).toBeUndefined();
-    });
-
-    it("quita el precio de oferta cuando se desactiva la oferta", () => {
-      // Arrange
-      const cambios = { oferta: false };
-
-      // Act
-      const producto = actualizarProducto("MC001", cambios);
-
-      // Assert
-      expect(producto.precioOferta).toBeNull();
-    });
-
-    it("lanza un error si el producto no existe", () => {
-      // Arrange
-      const codigo = "NO-EXISTE";
-
-      // Act
-      const actualizar = () => actualizarProducto(codigo, { stock: 1 });
-
-      // Assert
-      expect(actualizar).toThrow("No existe el producto NO-EXISTE.");
-    });
+    // Assert
+    expect(apiCatalogo.post).toHaveBeenCalledWith("/productos", expect.objectContaining({ codigo: "MC002", categoriaId: 1 }));
+    expect(creado.codigo).toBe("MC002");
   });
 
-  describe("eliminación", () => {
-    it("elimina un producto existente", () => {
-      // Arrange
-      const totalAntes = listarProductos().length;
+  it("modifica un producto con PUT /productos/{codigo}", async () => {
+    // Arrange
+    apiCatalogo.put.mockResolvedValue({ data: { ...PRODUCTO_API, stock: 3 } });
 
-      // Act
-      const resultado = eliminarProducto("MC001");
+    // Act
+    const actualizado = await servicio.actualizarProducto("MC002", { ...PRODUCTO_API, stock: 3, categoriaId: "1" });
 
-      // Assert
-      expect(resultado).toBe(true);
-      expect(obtenerProducto("MC001")).toBeUndefined();
-      expect(listarProductos()).toHaveLength(totalAntes - 1);
-    });
-
-    it("devuelve false si el producto no existe", () => {
-      // Arrange
-      const codigo = "NO-EXISTE";
-
-      // Act
-      const resultado = eliminarProducto(codigo);
-
-      // Assert
-      expect(resultado).toBe(false);
-    });
+    // Assert
+    expect(apiCatalogo.put).toHaveBeenCalledWith("/productos/MC002", expect.objectContaining({ stock: 3 }));
+    expect(actualizado.stock).toBe(3);
   });
 
-  describe("consultas especiales", () => {
-    it("los productos críticos tienen stock igual o menor al mínimo", () => {
-      // Arrange + Act
-      const criticos = listarProductosCriticos();
-
-      // Assert
-      expect(criticos.length).toBeGreaterThan(0);
-      expect(criticos.every((p) => p.stock <= p.stockMinimo)).toBe(true);
+  it("muestra el mensaje del backend si no se puede eliminar (409)", async () => {
+    // Arrange
+    apiCatalogo.delete.mockRejectedValue({
+      response: { status: 409, data: { mensaje: "El producto tiene pedidos asociados y no se puede eliminar.", detalles: [] } },
     });
 
-    it("lista solo los productos en oferta", () => {
-      // Arrange + Act
-      const ofertas = listarProductosEnOferta();
-
-      // Assert
-      expect(ofertas.length).toBeGreaterThan(0);
-      expect(ofertas.every((p) => p.oferta)).toBe(true);
-    });
-
-    it("lista solo los productos destacados", () => {
-      // Arrange + Act
-      const destacados = listarProductosDestacados();
-
-      // Assert
-      expect(destacados.length).toBeGreaterThan(0);
-      expect(destacados.every((p) => p.destacado)).toBe(true);
-    });
-
-    it("el precio final es el de oferta cuando el producto está en oferta", () => {
-      // Arrange
-      const enOferta = obtenerProducto("MC001");
-
-      // Act
-      const precio = precioFinal(enOferta);
-
-      // Assert
-      expect(precio).toBe(enOferta.precioOferta);
-    });
-
-    it("el precio final es el de venta cuando no hay oferta", () => {
-      // Arrange
-      const normal = obtenerProducto("MC002");
-
-      // Act
-      const precio = precioFinal(normal);
-
-      // Assert
-      expect(precio).toBe(7490);
-    });
+    // Act + Assert
+    await expect(servicio.eliminarProducto("MC002")).rejects.toThrow("El producto tiene pedidos asociados");
   });
 
-  describe("persistencia y suscripción", () => {
-    it("guarda en localStorage cada vez que cambian los datos", () => {
-      // Arrange
-      const espia = vi.spyOn(Storage.prototype, "setItem");
-
-      // Act
-      crearProducto(PRODUCTO_NUEVO);
-
-      // Assert
-      expect(espia).toHaveBeenCalledWith("ferreteria_db", expect.any(String));
-    });
-
-    it("el producto creado queda guardado en localStorage", () => {
-      // Arrange
-      crearProducto(PRODUCTO_NUEVO);
-
-      // Act
-      const guardado = JSON.parse(localStorage.getItem("ferreteria_db"));
-
-      // Assert
-      expect(guardado.productos.some((p) => p.codigo === "ZZ001")).toBe(true);
-    });
-
-    it("avisa a los suscriptores cuando cambian los datos", () => {
-      // Arrange
-      const callback = vi.fn();
-      suscribirCambios(callback);
-
-      // Act
-      actualizarProducto("MC001", { stock: 1 });
-
-      // Assert
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it("deja de avisar cuando se cancela la suscripción", () => {
-      // Arrange
-      const callback = vi.fn();
-      const cancelar = suscribirCambios(callback);
-      cancelar();
-
-      // Act
-      actualizarProducto("MC001", { stock: 1 });
-
-      // Assert
-      expect(callback).not.toHaveBeenCalled();
-    });
+  it("calcula el precio final con la oferta", () => {
+    // Arrange + Act + Assert
+    expect(servicio.precioFinal({ oferta: true, precioOferta: 900, precioVenta: 1000 })).toBe(900);
   });
 });

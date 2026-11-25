@@ -12,10 +12,10 @@ import {
   eliminarProducto,
 } from "../services/productosService";
 
-// CRUD de productos. La tabla se actualiza sola porque CatalogoContext escucha los cambios.
+// CRUD de productos contra ms-catalogo. Después de cada cambio se recarga el catálogo.
 function AdminProductos() {
   useTituloPagina("Administrar productos");
-  const { productos, categorias } = useCatalogo();
+  const { productos, categorias, recargar } = useCatalogo();
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState(null); // producto que se edita; null = uno nuevo
@@ -35,20 +35,21 @@ function AdminProductos() {
     setMostrarFormulario(true);
   }
 
-  function guardar(datos) {
+  async function guardar(datos) {
     try {
       if (editando) {
-        actualizarProducto(editando.codigo, datos);
+        await actualizarProducto(editando.codigo, datos);
       } else {
-        crearProducto(datos);
+        await crearProducto(datos);
       }
+      await recargar();
       setMostrarFormulario(false);
       setAviso({
         variante: "success",
         mensaje: `Producto "${datos.nombre}" ${editando ? "actualizado" : "creado"}.`,
       });
     } catch (error) {
-      // Por ejemplo: código repetido. El formulario queda abierto mostrando el motivo.
+      // Por ejemplo: código repetido (409). El formulario queda abierto mostrando el motivo.
       setErrorFormulario(error.message);
     }
   }
@@ -57,10 +58,17 @@ function AdminProductos() {
     setPorEliminar(productos.find((p) => p.codigo === codigo) || null);
   }
 
-  function confirmarEliminacion() {
-    eliminarProducto(porEliminar.codigo);
-    setAviso({ variante: "success", mensaje: `Producto "${porEliminar.nombre}" eliminado.` });
+  async function confirmarEliminacion() {
+    const producto = porEliminar;
     setPorEliminar(null);
+    try {
+      await eliminarProducto(producto.codigo);
+      await recargar();
+      setAviso({ variante: "success", mensaje: `Producto "${producto.nombre}" eliminado.` });
+    } catch (error) {
+      // 409: el producto tiene pedidos y no se puede borrar
+      setAviso({ variante: "danger", mensaje: error.message });
+    }
   }
 
   return (

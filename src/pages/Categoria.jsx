@@ -14,7 +14,7 @@ import { conStockDisponible } from "../utils/carrito";
 function Categoria() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { productos, categorias } = useCatalogo();
+  const { productos, categorias, cargando } = useCatalogo();
   const { agregar, items } = useCarrito();
   const [aviso, setAviso] = useState(null);
 
@@ -30,6 +30,15 @@ function Categoria() {
       agregado
         ? { variante: "success", mensaje: `"${producto.nombre}" se agregó a tu solicitud.` }
         : { variante: "warning", mensaje: `No hay más stock disponible de "${producto.nombre}".` }
+    );
+  }
+
+  // Mientras llega el catálogo desde la API, todavía no se sabe si existe
+  if (cargando) {
+    return (
+      <PlantillaPublica>
+        <p className="text-center text-muted py-5">Cargando...</p>
+      </PlantillaPublica>
     );
   }
 

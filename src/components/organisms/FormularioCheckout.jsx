@@ -108,7 +108,11 @@ function FormularioCheckout(props) {
       )}
 
       <div className="d-grid">
-        <Boton texto="Confirmar solicitud" type="submit" />
+        <Boton
+          texto={props.enviando ? "Enviando..." : "Confirmar solicitud"}
+          type="submit"
+          disabled={props.enviando}
+        />
       </div>
     </Form>
   );
